@@ -1,0 +1,52 @@
+name: Deploy to AWS S3 and CloudFront
+
+# Trigger this workflow on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+# Environment variables available to all jobs and steps
+env:
+  # Get these values from your CloudFormation stack outputs
+  S3_BUCKET_NAME: "583613079298-product-web-app-webapp-bucket"
+  CLOUDFRONT_DISTRIBUTION_ID: "EXP9CFO9NH5VK"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # Or your preferred Node.js version
+          cache: 'npm'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install dependencies
+        # Using 'ci' is faster and more reliable for CI environments
+        run: npm ci
+
+      - name: Build React application
+        # Pass the API credentials as build-time environment variables
+        run: |
+          VITE_GRAPHQL_API_URL=${{ vars.VITE_GRAPHQL_API_URL }}
+          VITE_GRAPHQL_API_KEY=${{ vars.VITE_GRAPHQL_API_KEY }}
+          npm run build
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
