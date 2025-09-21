@@ -5,29 +5,44 @@ import Loader from '../components/Loader';
 
 const AllProductsPage = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [nextToken, setNextToken] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const data = await getAllProducts();
-        setProducts(data.items);
-      } catch (err) {
-        setError('Failed to fetch products. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async (token) => {
+    try {
+      const data = await getAllProducts(token);
+      
+      // Filter out discontinued products before they are added to state
+      const visibleProducts = data.items.filter(
+        product => product.productStatus !== 'DISCONTINUED'
+      );
+      
+      // Append new products if loading more, otherwise set the initial list
+      setProducts(prevProducts => token ? [...prevProducts, ...visibleProducts] : visibleProducts);
+      setNextToken(data.nextToken);
+    } catch (err) {
+      setError('Failed to fetch products. Please try again later.');
+    }
+  };
 
-    fetchProducts();
+  // Effect for the initial page load
+  useEffect(() => {
+    setInitialLoading(true);
+    fetchProducts(null).finally(() => setInitialLoading(false));
   }, []);
 
-  if (loading) return <Loader />;
+  const handleLoadMore = () => {
+    if (!nextToken || loadingMore) return;
+    setLoadingMore(true);
+    fetchProducts(nextToken).finally(() => setLoadingMore(false));
+  };
+
+  if (initialLoading) return <Loader />;
   if (error) return <p className="error-message">{error}</p>;
 
-  // Determine grid layout based on number of products
+  // Determine the grid layout class based on the number of products
   const gridClass = products.length > 10 ? 'product-grid-3' : 'product-grid-2';
 
   return (
@@ -38,6 +53,18 @@ const AllProductsPage = () => {
           <ProductCard key={product.sku} product={product} />
         ))}
       </div>
+
+      {nextToken && (
+        <div className="load-more-container">
+          <button 
+            onClick={handleLoadMore} 
+            disabled={loadingMore}
+            className="load-more-button"
+          >
+            {loadingMore ? 'Loading...' : 'Load More'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

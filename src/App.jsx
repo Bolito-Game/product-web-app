@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 // Import Hooks
 import useResponsive from './hooks/useResponsive';
@@ -15,53 +15,39 @@ import CategoriesPage from './pages/CategoriesPage';
 function App() {
   const { isMobile } = useResponsive();
 
+  // The <BrowserRouter> wrapper is now removed from this return statement
   return (
-    <BrowserRouter>
-      {/* The main container for the entire application layout */}
-      <div className="app-layout">
-        <Header />
-        
-        {/* The main content area that adapts to the device type */}
-        <main className="main-content">
-          {/* --- Desktop Layout (with side ads) --- */}
-          {!isMobile && (
-            <>
-              {/* Left Ad Column */}
-              <div className="desktop-ad left-ad">
-                <AdComponent />
-              </div>
-
-              {/* Center Content Column */}
-              <div className="page-content-area">
-                <Routes>
-                  <Route path="/" element={<AllProductsPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
-                </Routes>
-              </div>
-
-              {/* Right Ad Column */}
-              <div className="desktop-ad right-ad">
-                <AdComponent />
-              </div>
-            </>
-          )}
-
-          {/* --- Mobile Layout (content only, ad is fixed at bottom) --- */}
-          {isMobile && (
+    <div className="app-layout">
+      <Header />
+      <main className="main-content">
+        {/* --- Desktop Layout --- */}
+        {!isMobile && (
+          <>
+            <div className="desktop-ad left-ad"><AdComponent /></div>
             <div className="page-content-area">
               <Routes>
                 <Route path="/" element={<AllProductsPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
               </Routes>
             </div>
-          )}
-        </main>
-        
-        {/* --- Floating Ad for Mobile --- */}
-        {/* This is rendered outside of 'main' to allow for fixed positioning */}
-        {isMobile && <AdComponent />}
-      </div>
-    </BrowserRouter>
+            <div className="desktop-ad right-ad"><AdComponent /></div>
+          </>
+        )}
+
+        {/* --- Mobile Layout --- */}
+        {isMobile && (
+          <div className="page-content-area">
+            <Routes>
+              <Route path="/" element={<AllProductsPage />} />
+              <Route path="/categories" element={<CategoriesPage />} />
+            </Routes>
+          </div>
+        )}
+      </main>
+
+      {/* --- Floating Ad for Mobile --- */}
+      {isMobile && <AdComponent />}
+    </div>
   );
 }
 

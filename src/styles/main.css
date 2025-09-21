@@ -21,24 +21,28 @@ body {
 
 .main-content {
   flex-grow: 1;
+  width: 100%;
   padding: 20px;
-  /* Add padding at the bottom for the fixed mobile ad */
   padding-bottom: 100px;
+  box-sizing: border-box;
 }
 
-/* On desktop, create a 3-column grid for ads and content */
-@media (min-width: 1024px) {
+/* --- DESKTOP LAYOUT --- */
+@media (min-width: 1200px) {
   .main-content {
     display: grid;
-    grid-template-columns: 200px 1fr 200px; /* Left Ad | Content | Right Ad */
-    gap: 20px;
-    padding-left: 20px;
-    padding-right: 20px;
-    max-width: 1400px;
+    grid-template-columns: 220px 1fr 220px; 
+    gap: 30px;
+    max-width: 1600px;
     margin: 0 auto;
+    padding: 20px 30px 100px;
   }
+
   .page-content-area {
     grid-column: 2 / 3;
+    max-width: 1100px; 
+    width: 100%;
+    justify-self: center;
   }
 }
 
@@ -57,8 +61,23 @@ body {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: padding 0.3s ease;
+  position: sticky; /* Makes the header stick */
+  top: 0;          /* Sticks it to the very top of the viewport when scrolling */
+  z-index: 1000;   /* Ensures it stays on top of all other page content */
 }
-.app-header h1 { margin: 0; font-size: 1.5em; }
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5em;
+  white-space: nowrap;
+  transition: font-size 0.3s ease;
+}
+
+.app-header nav {
+  white-space: nowrap;
+}
+
 .app-header nav a {
   margin-left: 20px;
   text-decoration: none;
@@ -66,18 +85,34 @@ body {
   font-weight: 500;
   padding-bottom: 5px;
   border-bottom: 2px solid transparent;
-  transition: border-color 0.3s;
+  font-size: 1em;
+  transition: font-size 0.3s ease, margin-left 0.3s ease, border-color 0.3s;
 }
+
 .app-header nav a:hover,
 .app-header nav a.active {
   border-bottom-color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .app-header { padding: 12px 20px; }
+  .app-header h1 { font-size: 1.3em; }
+  .app-header nav a { font-size: 0.9em; margin-left: 15px; }
+}
+
+@media (max-width: 480px) {
+  .app-header { padding: 10px 15px; }
+  .app-header h1 { font-size: 1.1em; }
+  .app-header nav a { font-size: 0.8em; margin-left: 10px; }
 }
 
 /* --- Product Grid & Card --- */
 .product-grid { display: grid; gap: 20px; }
 .product-grid-2 { grid-template-columns: repeat(2, 1fr); }
 .product-grid-3 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
 .product-card {
+  position: relative; 
   background-color: white;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -91,20 +126,62 @@ body {
 .product-info p { font-size: 0.9em; color: #666; margin-bottom: 15px; }
 .product-price { font-weight: bold; font-size: 1.2em; color: var(--primary-color); }
 
+/* --- Product Status Styling --- */
+.product-card.status-inactive::before {
+  content: ''; /* Required for pseudo-elements */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(45, 55, 72, 0.55); /* A slightly different, neutral dark shade */
+  z-index: 2; /* Place the overlay above the card content */
+  transition: background-color 0.3s ease;
+  pointer-events: none; /* Allows hover/click events to pass through */
+}
+
+/* On hover, lighten the overlay for the entire card */
+.product-card.status-inactive:hover::before {
+  background-color: rgba(45, 55, 72, 0.4); /* Lighter shade */
+}
+
 /* --- Image Loader --- */
 .image-frame {
   width: 100%;
-  padding-top: 100%; /* 1:1 Aspect Ratio */
+  padding-top: 100%;
   position: relative;
   background-color: #f0f0f0;
   transition: background-color 0.5s;
+  overflow: hidden;
 }
-.image-frame.loading { animation: pulse-bg 1.5s infinite; }
-.image-frame img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.image-frame.loading {
+  animation: pulse-bg 1.5s infinite;
+}
+
 @keyframes pulse-bg {
   0% { background-color: #e0e7ff; }
   50% { background-color: #c7d2fe; }
   100% { background-color: #e0e7ff; }
+}
+
+.placeholder-image {
+  position: absolute;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.final-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.4s ease-in-out;
 }
 
 /* --- Loader Spinner --- */
@@ -132,9 +209,38 @@ body {
 .accordion-header .arrow.open { transform: rotate(180deg); }
 
 /* --- Ads Styling --- */
-.ad-container { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; min-height: 90px; }
+.ad-container { display: flex; justify-content: center; align-items: center; background-color: #f0f0f0; min-height: 90px; width: 200px; }
 .mobile-ad { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-@media (min-width: 1024px) {
-  .desktop-ad.left-ad { grid-column: 1 / 2; }
-  .desktop-ad.right-ad { grid-column: 3 / 4; }
+@media (min-width: 1200px) {
+  .desktop-ad.left-ad {
+    grid-column: 1 / 2;
+    justify-self: start;
+  }
+  .desktop-ad.right-ad {
+    grid-column: 3 / 4;
+    justify-self: end;
+  }
+}
+
+/* --- Load More Button --- */
+.load-more-container {
+  text-align: center;
+  padding: 20px 0;
+}
+.load-more-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.load-more-button:hover {
+  background-color: #0056b3;
+}
+.load-more-button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
 }

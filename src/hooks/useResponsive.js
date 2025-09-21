@@ -8,6 +8,8 @@ const useResponsive = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);

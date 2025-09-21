@@ -46,11 +46,12 @@ export function getUserLocale() {
 export async function getAllProducts(nextToken = null) {
   const { lang, country } = getUserLocale();
   const query = `
-    query GetAllProductsByLocalization($lang: String!, $country: String!, $limit: Int, $nextToken: String) {
+    query GetAllProductsByLocalization($lang: String!, $country: String!, $nextToken: String) {
       getAllProductsByLocalization(lang: $lang, country: $country, limit: 20, nextToken: $nextToken) {
         items {
           sku
           imageUrl
+          productStatus
           localizations {
             productName
             description
@@ -67,11 +68,11 @@ export async function getAllProducts(nextToken = null) {
 }
 
 // Query for all categories in a specific language
-export async function getAllCategories() {
+export async function getAllCategories(nextToken = null) {
   const { lang } = getUserLocale();
   const query = `
-    query GetAllCategoriesByLanguage($lang: String!) {
-      getAllCategoriesByLanguage(lang: $lang) {
+    query GetAllCategoriesByLanguage($lang: String!, $nextToken: String) {
+      getAllCategoriesByLanguage(lang: $lang, limit: 20, nextToken: $nextToken) {
         items {
           category
           text
@@ -80,8 +81,8 @@ export async function getAllCategories() {
       }
     }
   `;
-  const data = await fetchGraphQL(query, { lang });
-  return data.getAllCategoriesByLanguage.items;
+  const data = await fetchGraphQL(query, { lang, nextToken });
+  return data.getAllCategoriesByLanguage;
 }
 
 // Query for products within a specific category
@@ -92,6 +93,7 @@ export async function getProductsByCategory(category) {
       getProductsByCategory(category: $category, lang: $lang, country: $country) {
         sku
         imageUrl
+        productStatus
         localizations {
           productName
           description
