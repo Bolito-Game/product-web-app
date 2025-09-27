@@ -37,10 +37,9 @@ jobs:
         run: npm ci
 
       - name: Build React application
-        # Pass the API credentials as build-time environment variables
         run: |
-          VITE_GRAPHQL_API_URL=${{ vars.VITE_GRAPHQL_API_URL }}
-          VITE_GRAPHQL_API_KEY=${{ vars.VITE_GRAPHQL_API_KEY }}
+          export VITE_GRAPHQL_API_URL='${{ vars.VITE_GRAPHQL_API_URL }}'
+          export VITE_GRAPHQL_API_KEY='${{ vars.VITE_GRAPHQL_API_KEY }}'
           npm run build
 
       - name: Deploy to S3
