@@ -1,4 +1,6 @@
+// src/components/ProductCard.js
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ImageLoader from './ImageLoader';
 
 const ProductCard = ({ product }) => {
@@ -14,21 +16,22 @@ const ProductCard = ({ product }) => {
   }).format(localization.price);
 
   // Determine the CSS class based on the product status.
-  // The .toUpperCase() call makes this check case-insensitive and robust.
-  const statusClass = product.productStatus && product.productStatus.toUpperCase() === 'INACTIVE' 
+  const statusClass = product.productStatus?.toUpperCase() === 'INACTIVE' 
     ? 'status-inactive' 
     : '';
 
   return (
-    // Apply the conditional status class to the main container
-    <div className={`product-card ${statusClass}`}>
-      <ImageLoader src={product.imageUrl} alt={localization.productName} />
-      <div className="product-info">
-        <h3>{localization.productName}</h3>
-        <p>{localization.description}</p>
-        <div className="product-price">{formattedPrice}</div>
+    // 👇 WRAP the card with a Link to the product detail page
+    <Link to={`/product/${product.sku}`} state={{ product }} className="product-card-link">
+      <div className={`product-card ${statusClass}`}>
+        <ImageLoader src={product.imageUrl} alt={localization.productName} />
+        <div className="product-info">
+          <h3>{localization.productName}</h3>
+          <p>{localization.description}</p>
+          <div className="product-price">{formattedPrice}</div>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

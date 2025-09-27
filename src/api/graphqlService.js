@@ -106,3 +106,29 @@ export async function getProductsByCategory(category) {
   const data = await fetchGraphQL(query, { category, lang, country });
   return data.getProductsByCategory;
 }
+
+// Fetches a single product by its SKU 
+export async function getProductBySku (sku) {
+  const { lang, country } = getUserLocale();
+  const query = `
+    query GetProductBySku($sku: ID!, $lang: String, $country: String) {
+      getProductBySku(sku: $sku, lang: $lang, country: $country) {
+        sku
+        category
+        imageUrl
+        productStatus
+        quantityInStock
+        localizations {
+          lang
+          country
+          productName
+          description
+          price
+          currency
+        }
+      }
+    }
+  `;
+  const data = await fetchGraphQL(query, { sku, lang, country });
+  return data.getProductsByCategory;
+}
