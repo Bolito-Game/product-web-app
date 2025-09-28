@@ -1,115 +1,148 @@
-// src/pages/ProductDetailPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { getProductBySku } from '../api/graphqlService';
 import Loader from '../components/Loader';
+import { useShoppingCart } from '../hooks/useShoppingCart';
 
-// --- Reusable Quantity Selector Component ---
-const QuantitySelector = ({ maxQuantity, quantity, onQuantityChange }) => {
-  const handleDecrement = () => onQuantityChange(Math.max(0, quantity - 1));
-  const handleIncrement = () => onQuantityChange(Math.min(maxQuantity, quantity + 1));
+/* ---------- reusable quantity selector --------------------------- */
+const QuantitySelector = ({ max, value, onChange }) => {
+  const dec = () => onChange(Math.max(1, value - 1));
+  const inc = () => onChange(Math.min(max, value + 1));
 
   return (
     <div className="quantity-selector">
-      <button onClick={handleDecrement} disabled={quantity <= 0}>-</button>
-      <span>{quantity}</span>
-      <button onClick={handleIncrement} disabled={quantity >= maxQuantity}>+</button>
+      <button onClick={dec} disabled={value <= 1}>-</button>
+      <span>{value}</span>
+      <button onClick={inc} disabled={value >= max}>+</button>
     </div>
   );
 };
 
-// --- Main Detail Page Component ---
+/* ---------- page ------------------------------------------------- */
 const ProductDetailPage = () => {
-  const { sku } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const [product, setProduct] = useState(location.state?.product || null);
-  const [loading, setLoading] = useState(!product);
+  const { sku } = useParams(); // ← SKU comes from the URL
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [qty, setQty] = useState(1);
 
+  const { isInCart, handleToggleCart } = useShoppingCart(sku, product);
+
+  /* ---- fetch product each time the sku changes ------------------ */
   useEffect(() => {
-    if (!product) {
-      const fetchProduct = async () => {
-        try {
-          const fetchedProduct = await getProductBySku(sku);
-          if (!fetchedProduct) throw new Error('Product not found.');
-          setProduct(fetchedProduct);
-        } catch (err) {
-          setError('Could not load the product. Please try again.');
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchProduct();
-    }
-  }, [sku, product]);
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getProductBySku(sku); // your GraphQL wrapper
+        if (!alive) return;
+        if (!data) throw new Error('Product not found');
+        setProduct(data);
+        setQty(data.quantityInStock > 0 ? 1 : 0);
+      } catch (e) {
+        if (alive) setError(e.message || 'Failed to load product');
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [sku]);
 
-  useEffect(() => {
-    if (product && product.quantityInStock > 0) {
-      setQuantity(1);
-    } else if (product) {
-      setQuantity(0);
-    }
-  }, [product]);
-
+  /* ---- guards ---------------------------------------------------- */
   if (loading) return <div className="detail-loader-container"><Loader /></div>;
   if (error) return <p className="error-message">{error}</p>;
   if (!product) return null;
 
-  const localization = product.localizations?.[0] || {};
-  const hasStock = product.quantityInStock > 0;
-  const panelClasses = `info-panel ${isPanelExpanded ? 'expanded' : ''}`;
+  /* ---- data ------------------------------------------------------ */
+  const {
+    imageUrl,
+    category,
+    productStatus,
+    quantityInStock,
+    localizations
+  } = product;
 
+  const loc = localizations?.[0] || {};
+  const inStock = quantityInStock > 0;
+  const panelClasses = `info-panel${panelOpen ? ' expanded' : ''}`;
+
+  /* ---- helpers --------------------------------------------------- */
+  const fmtPrice = (value, ccy) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: ccy || 'USD' }).format(value ?? 0);
+
+  /* ---- JSX ------------------------------------------------------- */
   return (
     <div className="product-detail-page">
+      {/* IMAGE (fixed – never moves) */}
       <div className="product-image-container">
-        <img 
-          src={product.imageUrl} 
-          alt={localization.productName}
+        <img
           className="product-detail-image"
+          src={imageUrl}
+          alt={loc.productName || sku}
         />
       </div>
 
-      <div className={panelClasses} onClick={() => !isPanelExpanded && setIsPanelExpanded(true)}>
-        <div className="panel-handle-bar" onClick={(e) => { e.stopPropagation(); setIsPanelExpanded(!isPanelExpanded); }}>
-          {isPanelExpanded ? '▼' : '▲'} Tap to {isPanelExpanded ? 'close' : 'see details'}
+      {/* INFO PANEL */}
+      <div
+        className={panelClasses}
+        onClick={() => !panelOpen && setPanelOpen(true)}
+      >
+        <div
+          className="panel-handle-bar"
+          onClick={(e) => { e.stopPropagation(); setPanelOpen(!panelOpen); }}
+        >
+          {panelOpen ? '▼' : '▲'} Tap to {panelOpen ? 'close' : 'see details'}
         </div>
-        
+
         <div className="panel-content">
-          <h2 className="product-detail-title">{localization.productName}</h2>
+          <h2 className="product-detail-title">{loc.productName}</h2>
+
+          <p><strong>SKU:</strong> {sku}</p>
+          {category && <p><strong>Category:</strong> {category}</p>}
+          {productStatus && <p><strong>Status:</strong> {productStatus}</p>}
+
           <p className="product-detail-price">
-            {new Intl.NumberFormat('en-US', { 
-              style: 'currency', 
-              currency: localization.currency || 'USD' 
-            }).format(localization.price)}
+            {fmtPrice(loc.price, loc.currency)}
           </p>
 
+          {/* EXPANDED SECTION */}
           <div className="panel-expanded-content">
-            <p className="product-full-description">{localization.description}</p>
-            
+            <p className="product-full-description">{loc.description}</p>
+
             <div className="stock-info">
-              <strong>Availability:</strong> 
-              <span className={hasStock ? 'in-stock' : 'out-of-stock'}>
-                {hasStock ? `${product.quantityInStock} in stock` : 'Out of Stock'}
+              <strong>Availability:</strong>{' '}
+              <span className={inStock ? 'in-stock' : 'out-of-stock'}>
+                {inStock ? `${quantityInStock} in stock` : 'Out of Stock'}
               </span>
             </div>
 
-            {hasStock && (
+            {inStock && (
               <>
                 <div className="purchase-controls">
                   <label>Quantity:</label>
-                  <QuantitySelector 
-                    maxQuantity={product.quantityInStock}
-                    quantity={quantity}
-                    onQuantityChange={setQuantity}
+                  <QuantitySelector
+                    max={quantityInStock}
+                    value={qty}
+                    onChange={setQty}
                   />
                 </div>
+                
                 <div className="action-buttons">
-                  <button disabled={quantity === 0} className="add-to-cart-btn">Add to Shopping Cart</button>
-                  <button disabled={quantity === 0} className="pay-now-btn">Pay Now</button>
+                  <button
+                    disabled={qty === 0}
+                    className="add-to-cart-btn"
+                    onClick={handleToggleCart}
+                  >
+                    {isInCart ? 'Delete from Shopping Cart' : 'Add to Shopping Cart'}
+                  </button>
+                  <button
+                    disabled={qty === 0}
+                    className="pay-now-btn"
+                  >
+                    Pay Now
+                  </button>
                 </div>
               </>
             )}

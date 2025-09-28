@@ -11,6 +11,7 @@ import Header from './components/Header';
 import AllProductsPage from './pages/AllProductsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import ShoppingCartPage from './pages/ShoppingCartPage';
 
 function App() {
   const { isMobile } = useResponsive();
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/" element={<AllProductsPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/product/:sku" element={<ProductDetailPage />} />
+                <Route path="/shopping-cart" element={<ShoppingCartPage />} />
               </Routes>
             </div>
           </>
@@ -39,6 +41,7 @@ function App() {
               <Route path="/" element={<AllProductsPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/product/:sku" element={<ProductDetailPage />} />
+              <Route path="/shopping-cart" element={<ShoppingCartPage />} />
             </Routes>
           </div>
         )}

@@ -130,5 +130,5 @@ export async function getProductBySku (sku) {
     }
   `;
   const data = await fetchGraphQL(query, { sku, lang, country });
-  return data.getProductsByCategory;
+  return data.getProductBySku;
 }

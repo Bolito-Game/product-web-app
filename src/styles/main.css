@@ -282,10 +282,7 @@ body {
   cursor: not-allowed;
 }
 
-/* ==========================================================
-   PRODUCT DETAIL –  fixed image, overlay panel
-   ========================================================== */
-
+/* PRODUCT DETAIL –  fixed image, overlay panel */
 :root{
   --hdr-h: 60px;          /* header height – change here only */
 }
@@ -483,6 +480,8 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  padding: 5px;
+  width: 100%;
 }
 
 .action-buttons button {
@@ -564,4 +563,51 @@ body {
     padding: 0 10px;
     font-size: 1.1em;
   }
+}
+
+/* --- Header cart icon --- */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-wrapper {
+  height: clamp(18px, 3vw, 32px);
+  width: auto;
+  cursor: pointer;
+  transition: transform .2s;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative; /* For positioning the span */
+}
+
+.cart-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.cart-wrapper svg {
+  width: 32px;
+  height: 32px;
+}
+
+.cart-wrapper text {
+  display: block;
+  visibility: visible;
+  fill: red;
+  font-size: 6px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+.cart-wrapper .cart-count {
+  position: absolute;
+  top: -5px;
+  right: -10px;
+  color: red;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
 }
