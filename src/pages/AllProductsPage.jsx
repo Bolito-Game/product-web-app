@@ -42,13 +42,10 @@ const AllProductsPage = () => {
   if (initialLoading) return <Loader />;
   if (error) return <p className="error-message">{error}</p>;
 
-  // Determine the grid layout class based on the number of products
-  const gridClass = products.length > 10 ? 'product-grid-3' : 'product-grid-2';
-
   return (
     <div>
       <h2>All Products</h2>
-      <div className={`product-grid ${gridClass}`}>
+      <div className="product-grid product-grid-3">
         {products.map((product) => (
           <ProductCard key={product.sku} product={product} />
         ))}

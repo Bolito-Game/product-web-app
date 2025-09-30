@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // Import Hooks
 import useResponsive from './hooks/useResponsive';
 
+// Import NotificationContext
+import { NotificationContext } from './contexts/NotificationContext'; 
+
 // Import Components
 import Header from './components/Header';
+import Notification from './components/Notification';
 
 // Import Pages
 import AllProductsPage from './pages/AllProductsPage';
@@ -15,11 +19,18 @@ import ShoppingCartPage from './pages/ShoppingCartPage';
 
 function App() {
   const { isMobile } = useResponsive();
+  // Get notification state and handlers from NotificationContext
+  const { notificationMessage, hideNotification } = useContext(NotificationContext); 
 
   return (
     <div className="app-layout">
-      <Header />  {/* Always show header */}
+      <Header />
       <main className="main-content">
+        {/* Render Notification component if there's a message */}
+        {notificationMessage && (
+          <Notification message={notificationMessage} onClose={hideNotification} />
+        )}
+
         {/* --- Desktop Layout --- */}
         {!isMobile && (
           <>

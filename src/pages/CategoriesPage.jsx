@@ -30,10 +30,8 @@ const CategoryProductList = ({ categoryId }) => {
   if (loading) return <Loader />;
   if (error) return <p className="error-message">{error}</p>;
 
-  const gridClass = products.length > 10 ? 'product-grid-3' : 'product-grid-2';
-
   return (
-    <div className={`product-grid ${gridClass}`}>
+    <div className="product-grid product-grid-3">
       {products.map((product) => (
         <ProductCard key={product.sku} product={product} />
       ))}

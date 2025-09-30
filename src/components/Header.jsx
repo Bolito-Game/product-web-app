@@ -1,10 +1,10 @@
 import React, { useContext, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { CartContext } from '../hooks/cartContext';
+import { CartContext } from '../contexts/CartContext';
 
 const Header = () => {
   const { cartItems } = useContext(CartContext);
-  const count = cartItems.length > 0 ? String(cartItems.length) : '+'; // Explicitly convert to string
+  const count = cartItems.length > 0 ? String(cartItems.length) : '+'; 
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -13,7 +13,6 @@ const Header = () => {
     console.log('Header useEffect: cartItems =', cartItems, 'count =', count);
   }, [cartItems]);
 
-  console.log('Header render: cartItems =', cartItems, 'count =', count); // Debug log
 
   return React.createElement(
     'header',

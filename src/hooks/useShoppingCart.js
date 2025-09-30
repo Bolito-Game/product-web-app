@@ -1,17 +1,9 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
-import { CartContext } from './cartContext';
+import { CartContext } from '../contexts/CartContext';
+import { NotificationContext } from '../contexts/NotificationContext'; // Import NotificationContext
 
 // A constant for the local storage key to avoid typos.
 const CART_KEY = 'product-web-app-shopping-cart';
-
-/**
- * A helper function to get the current list of SKUs from local storage.
- * @returns {string[]} An array of SKUs in the cart.
- */
-const getCartSkus = () => {
-  const skus = localStorage.getItem(CART_KEY);
-  return skus ? skus.split(',').filter(Boolean) : [];
-};
 
 /**
  * Custom hook to manage shopping cart state and actions.
@@ -20,51 +12,47 @@ const getCartSkus = () => {
  * @returns {{isInCart: boolean, handleToggleCart: function}}
  */
 export const useShoppingCart = (sku, product) => {
-  const { cartItems = [], updateCart } = useContext(CartContext); // Fallback to empty array
-  // State to track if the current product is in the cart.
+  // Destructure cart items and update function from CartContext
+  const { cartItems = [], updateCart } = useContext(CartContext);
+  // Destructure showNotification from NotificationContext
+  const { showNotification } = useContext(NotificationContext);
+
   const [isInCart, setIsInCart] = useState(() => cartItems.includes(sku));
 
-  // Re-check if the item is in the cart whenever the SKU or cartItems change.
   useEffect(() => {
-    const inCart = cartItems.includes(sku);
-    setIsInCart(inCart);
-    console.log('useShoppingCart: sku =', sku, 'isInCart =', inCart, 'cartItems =', cartItems); // Debug log
+    setIsInCart(cartItems.includes(sku));
   }, [sku, cartItems]);
 
-  // A memoized function to add or remove the item from the cart.
   const handleToggleCart = useCallback(() => {
-    if (!sku || !product) {
-      console.log('handleToggleCart: Missing sku or product', { sku, product }); // Debug log
+    if (!sku) {
+      // If SKU is not available, we can't perform cart operations.
       return;
     }
 
-    console.log('handleToggleCart: Before toggle, cartItems =', cartItems); // Debug log
     const isCurrentlyInCart = cartItems.includes(sku);
 
     if (isCurrentlyInCart) {
       // --- REMOVE FROM CART ---
       const updatedSkus = cartItems.filter(itemSku => itemSku !== sku);
-      updateCart(updatedSkus);
-      
-      // Remove the separate local storage item for the product data.
-      localStorage.removeItem(sku);
-
+      updateCart(updatedSkus); // Update the list of SKUs in CartContext and localStorage (CART_KEY)
+      localStorage.removeItem(sku); // REMOVED: Remove the full product details from localStorage by its SKU
       setIsInCart(false);
-      console.log('handleToggleCart: Item removed, updatedSkus =', updatedSkus); // Debug log
-      alert(`Item was removed from the Shopping Cart.`);
+      
+      showNotification('Item was removed from the Shopping Cart.');
+
     } else {
       // --- ADD TO CART ---
       const updatedSkus = [...cartItems, sku];
-      updateCart(updatedSkus);
-
-      // Add the product data as a new key-value pair in local storage.
-      localStorage.setItem(sku, JSON.stringify(product));
-      
+      updateCart(updatedSkus); // Update the list of SKUs in CartContext and localStorage (CART_KEY)
+      // ADDED: Store the full product details in localStorage using the SKU as the key
+      if (product) { // Ensure product data is available before storing
+        localStorage.setItem(sku, JSON.stringify(product));
+      }
       setIsInCart(true);
-      console.log('handleToggleCart: Item added, updatedSkus =', updatedSkus); // Debug log
-      alert('Item was added to the Shopping Cart!');
+      
+      showNotification('Item was added to the Shopping Cart!');
     }
-  }, [sku, product, cartItems, updateCart]);
+  }, [sku, product, cartItems, updateCart, showNotification]);
 
   return { isInCart, handleToggleCart };
 };
