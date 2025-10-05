@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getProductBySku } from '../api/graphqlService';
+import { getProductsBySku } from '../api/graphqlService';
 import Loader from '../components/Loader';
 import { useShoppingCart } from '../hooks/useShoppingCart';
 import { setProductInCache } from '../utils/productCache';
@@ -50,30 +50,32 @@ const ProductDetailPage = () => {
           }
       }
 
-      // 2. Check if the cache is valid and not expired (less than 1 hour old).
+      // 2. Check if the cache is valid and not expired.
       const now = new Date().getTime();
       const isCacheValid = cachedItem && cachedItem.data && cachedItem.timestamp && (now - cachedItem.timestamp < TTL);
 
       if (isCacheValid) {
-        // 3a. If cache is valid, use it and don't make a remote call.
+        // 3a. If cache is valid, use it.
         if (alive) {
           setProduct(cachedItem.data);
           setQty(cachedItem.data.quantityInStock > 0 ? 1 : 0);
           setLoading(false);
         }
-        return; // Done
+        return;
       }
 
-      // 3b. If cache is missing, invalid, or expired, fetch from API.
+      // 3b. If cache is invalid or expired, fetch from API.
       try {
-        const data = await getProductBySku(sku);
+        const products = await getProductsBySku([sku]); // Call the updated API function
         if (!alive) return;
+
+        const data = products?.[0]; // Extract the single product from the array response
         if (!data) throw new Error('Product not found');
         
         setProduct(data);
         setQty(data.quantityInStock > 0 ? 1 : 0);
         
-        // 4. Save the newly fetched data to the cache with a new timestamp.
+        // 4. Save the newly fetched data to the cache.
         setProductInCache(sku, data);
         
       } catch (e) {

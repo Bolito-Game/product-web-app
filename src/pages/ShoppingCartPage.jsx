@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
+import { cleanupExpiredProducts } from '../utils/productCache';
 
 const ShoppingCartPage = () => {
   const [cartData, setCartData] = useState([]);
@@ -64,6 +65,7 @@ const ShoppingCartPage = () => {
     };
 
     loadCartData();
+    cleanupExpiredProducts();
   }, []);
 
   const handleToggleCheck = useCallback((skuToToggle) => {
