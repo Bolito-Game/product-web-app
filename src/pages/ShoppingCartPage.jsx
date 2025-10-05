@@ -1,70 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 
 const ShoppingCartPage = () => {
-  const [cartProducts, setCartProducts] = useState([]);
+  const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const cartStorageKey = 'product-web-app-shopping-cart';
 
   useEffect(() => {
-    // Define the key for the shopping cart SKU list in local storage
-    const cartStorageKey = 'product-web-app-shopping-cart';
-
-    // Retrieve the comma-separated SKU string
-    const skusString = localStorage.getItem(cartStorageKey);
-
-    // If the key is not found or its value is empty, the cart is empty
-    if (!skusString) {
-      setLoading(false);
-      return;
-    }
-
-    // Convert the string of SKUs into an array, removing any empty entries
-    const skus = skusString.split(',').filter(sku => sku.trim() !== '');
-
-    // If there are no valid SKUs, the cart is effectively empty
-    if (skus.length === 0) {
+    // Fetch cart items and their full details
+    const loadCartData = () => {
+      const cartItemsString = localStorage.getItem(cartStorageKey);
+      if (!cartItemsString) {
         setLoading(false);
         return;
-    }
+      }
 
-    // Fetch each product's data from local storage using its SKU as the key
-    const products = skus
-      .map(sku => {
-        try {
-          const productJson = localStorage.getItem(sku);
-          // Parse the JSON string into a product object if it exists
-          return productJson ? JSON.parse(productJson) : null;
-        } catch (error) {
-          console.error(`Error parsing product data for SKU: ${sku}`, error);
-          // Return null if there's an error parsing the data
-          return null;
+      let cartItems;
+      try {
+        cartItems = JSON.parse(cartItemsString);
+      } catch (e) {
+        console.error("Failed to parse cart JSON", e);
+        setLoading(false);
+        return;
+      }
+
+      if (cartItems.length === 0) {
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch product details for each item in the cart from the local storage cache.
+      const productsData = cartItems.map(item => {
+        const productJson = localStorage.getItem(item.sku);
+        let product = null;
+
+        // Check for the product and parse it, expecting the new cache structure.
+        if (productJson) {
+          try {
+            const cachedItem = JSON.parse(productJson);
+            // Ensure the cached item has the expected { data, timestamp } structure.
+            if (cachedItem && cachedItem.data) {
+                product = cachedItem.data;
+            }
+          } catch (e) {
+            console.error(`Failed to parse product from cache for SKU: ${item.sku}`, e);
+          }
         }
-      })
-      // Filter out any null values that resulted from missing data or parsing errors
-      .filter(Boolean);
+        
+        // **Business Rule**: If a product is not ACTIVE, it cannot be checked.
+        const isChecked = product?.productStatus === 'ACTIVE' ? item.checked : false;
 
-    setCartProducts(products);
-    setLoading(false);
-  }, []); // The empty dependency array ensures this effect runs only once on component mount
+        return { ...item, product, checked: isChecked };
+      }).filter(item => item.product); // Filter out items where product details couldn't be found
 
-  // Display a loader while fetching data
+      setCartData(productsData);
+
+      // **Data Integrity**: If any product was forced to unchecked, update localStorage
+      const updatedCartItems = productsData.map(({ sku, checked }) => ({ sku, checked }));
+      localStorage.setItem(cartStorageKey, JSON.stringify(updatedCartItems));
+
+      setLoading(false);
+    };
+
+    loadCartData();
+  }, []);
+
+  const handleToggleCheck = useCallback((skuToToggle) => {
+    const newCartData = cartData.map(item => {
+      if (item.sku === skuToToggle) {
+        // Only allow checking if the product is ACTIVE
+        if (item.product.productStatus === 'ACTIVE') {
+          return { ...item, checked: !item.checked };
+        }
+      }
+      return item;
+    });
+
+    setCartData(newCartData);
+
+    // Update localStorage with the new checked status
+    const updatedCartForStorage = newCartData.map(({ sku, checked }) => ({ sku, checked }));
+    localStorage.setItem(cartStorageKey, JSON.stringify(updatedCartForStorage));
+  }, [cartData]);
+
   if (loading) {
     return <Loader />;
   }
 
-  // Display a message if the shopping cart is empty
-  if (cartProducts.length === 0) {
+  if (cartData.length === 0) {
     return <p className="error-message">Your shopping cart is empty. 🛒</p>;
   }
 
-  // Render the list of products in the shopping cart
+  const checkedItemsCount = cartData.filter(item => item.checked).length;
+
   return (
     <div className="shopping-cart-page">
-      <h2>Your Shopping Cart</h2>
+      <div className="cart-header">
+        <h2>Your Shopping Cart</h2>
+        <button 
+          className="checkout-button" 
+          disabled={checkedItemsCount === 0}
+        >
+          Check Out {checkedItemsCount} Product{checkedItemsCount !== 1 ? 's' : ''}
+        </button>
+      </div>
       <div className="product-grid product-grid-3">
-        {cartProducts.map((product) => (
-          <ProductCard key={product.sku} product={product} />
+        {cartData.map(({ product, checked }) => (
+          <ProductCard
+            key={product.sku}
+            product={product}
+            isChecked={checked}
+            onToggleCheck={() => handleToggleCheck(product.sku)}
+            isCheckable={true} // Prop to tell ProductCard to show a checkmark
+          />
         ))}
       </div>
     </div>

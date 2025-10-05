@@ -1,16 +1,24 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 
 export const CartContext = createContext();
 
+// A constant for the local storage key to avoid typos.
+const CART_KEY = 'product-web-app-shopping-cart';
+
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const CART_KEY = 'product-web-app-shopping-cart';
 
   // Sync cartItems with localStorage
   const syncCartWithStorage = () => {
-    const stored = localStorage.getItem(CART_KEY);
-    const newItems = stored ? stored.split(',').filter(Boolean) : [];
-    setCartItems([...newItems]); // Create new array to ensure re-render
+    try {
+      const stored = localStorage.getItem(CART_KEY);
+      // Parse the JSON string from storage, or default to an empty array
+      const newItems = stored ? JSON.parse(stored) : [];
+      setCartItems(newItems);
+    } catch (error) {
+      console.error("Failed to parse cart items from localStorage", error);
+      setCartItems([]); // Reset to empty array on parsing error
+    }
   };
 
   useEffect(() => {
@@ -31,7 +39,7 @@ export const CartProvider = ({ children }) => {
 
   const updateCart = (items) => {
     setCartItems([...items]); // Create new array to ensure re-render
-    localStorage.setItem(CART_KEY, items.join(','));
+    localStorage.setItem(CART_KEY, JSON.stringify(items));
   };
 
   return (
