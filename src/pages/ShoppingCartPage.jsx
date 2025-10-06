@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import { cleanupExpiredProducts } from '../utils/productCache';
@@ -7,6 +8,20 @@ const ShoppingCartPage = () => {
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const cartStorageKey = 'product-web-app-shopping-cart';
+
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    // Filter for checked items and map them to the format the checkout page expects.
+    const itemsToCheckout = cartData
+      .filter((item) => item.checked)
+      // NOTE: Current cart logic doesn't store quantity, so we assume 1.
+      .map((item) => ({ sku: item.product.sku, quantity: 1 }));
+
+    if (itemsToCheckout.length > 0) {
+      navigate("/checkout", { state: { items: itemsToCheckout } });
+    }
+  };
 
   useEffect(() => {
     // Fetch cart items and their full details
@@ -103,6 +118,7 @@ const ShoppingCartPage = () => {
         <button 
           className="checkout-button" 
           disabled={checkedItemsCount === 0}
+          onClick={handleCheckout}
         >
           Check Out {checkedItemsCount} Product{checkedItemsCount !== 1 ? 's' : ''}
         </button>

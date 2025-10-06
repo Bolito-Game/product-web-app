@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getProductsBySku } from '../api/graphqlService';
 import Loader from '../components/Loader';
 import { useShoppingCart } from '../hooks/useShoppingCart';
@@ -29,6 +30,15 @@ const ProductDetailPage = () => {
   const [qty, setQty] = useState(1);
 
   const { isInCart, handleToggleCart } = useShoppingCart(sku, product);
+
+  const navigate = useNavigate(); 
+
+  const handlePayNow = () => {
+    // Navigates to the checkout page, passing the current SKU and quantity in the route's state.
+    if (qty > 0) {
+      navigate("/checkout", { state: { items: [{ sku, quantity: qty }] } });
+    }
+  };
 
   /* ---- fetch product each time the sku changes ------------------ */
   useEffect(() => {
@@ -173,6 +183,7 @@ const ProductDetailPage = () => {
                   <button
                     disabled={qty === 0}
                     className="pay-now-btn"
+                    onClick={handlePayNow}
                   >
                     Pay Now
                   </button>
