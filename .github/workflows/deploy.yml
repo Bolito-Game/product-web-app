@@ -40,6 +40,9 @@ jobs:
         run: |
           export VITE_GRAPHQL_API_URL='${{ vars.VITE_GRAPHQL_API_URL }}'
           export VITE_GRAPHQL_API_KEY='${{ vars.VITE_GRAPHQL_API_KEY }}'
+          export VITE_PUBLIC_API_ENDPOINT='${{ vars.VITE_PUBLIC_API_ENDPOINT }}'
+          export VITE_PUBLIC_API_KEY='${{ vars.PUBLIC_API_KEY }}'
+          export VITE_PAYPAL_CLIENT_ID='${{ vars.VITE_PAYPAL_CLIENT_ID }}'
           npm run build
 
       - name: Deploy to S3
