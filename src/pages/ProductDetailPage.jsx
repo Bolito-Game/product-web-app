@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getProductsBySku } from '../api/graphqlService';
 import Loader from '../components/Loader';
+import ImageLoader from '../components/ImageLoader'; // Import the ImageLoader component
 import { useShoppingCart } from '../hooks/useShoppingCart';
 import { setProductInCache } from '../utils/productCache';
 
@@ -30,11 +30,9 @@ const ProductDetailPage = () => {
   const [qty, setQty] = useState(1);
 
   const { isInCart, handleToggleCart } = useShoppingCart(sku, product);
-
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handlePayNow = () => {
-    // Navigates to the checkout page, passing the current SKU and quantity in the route's state.
     if (qty > 0) {
       navigate("/checkout", { state: { items: [{ sku, quantity: qty }] } });
     }
@@ -49,23 +47,20 @@ const ProductDetailPage = () => {
       setLoading(true);
       setError(null);
 
-      // 1. Check for a cached item in local storage.
       const itemString = localStorage.getItem(sku);
       let cachedItem = null;
       if (itemString) {
-          try {
-              cachedItem = JSON.parse(itemString);
-          } catch (e) {
-              console.error("Failed to parse cached product", e);
-          }
+        try {
+          cachedItem = JSON.parse(itemString);
+        } catch (e) {
+          console.error("Failed to parse cached product", e);
+        }
       }
 
-      // 2. Check if the cache is valid and not expired.
       const now = new Date().getTime();
       const isCacheValid = cachedItem && cachedItem.data && cachedItem.timestamp && (now - cachedItem.timestamp < TTL);
 
       if (isCacheValid) {
-        // 3a. If cache is valid, use it.
         if (alive) {
           setProduct(cachedItem.data);
           setQty(cachedItem.data.quantityInStock > 0 ? 1 : 0);
@@ -74,29 +69,25 @@ const ProductDetailPage = () => {
         return;
       }
 
-      // 3b. If cache is invalid or expired, fetch from API.
       try {
-        const products = await getProductsBySku([sku]); // Call the updated API function
+        const products = await getProductsBySku([sku]);
         if (!alive) return;
 
-        const data = products?.[0]; // Extract the single product from the array response
+        const data = products?.[0];
         if (!data) throw new Error('Product not found');
-        
+
         setProduct(data);
         setQty(data.quantityInStock > 0 ? 1 : 0);
-        
-        // 4. Save the newly fetched data to the cache.
         setProductInCache(sku, data);
-        
       } catch (e) {
         if (alive) setError(e.message || 'Failed to load product');
       } finally {
         if (alive) setLoading(false);
       }
     };
-    
+
     fetchProductData();
-    
+
     return () => { alive = false; };
   }, [sku]);
 
@@ -127,10 +118,10 @@ const ProductDetailPage = () => {
   return (
     <div className="product-detail-page">
       <div className="product-image-container">
-        <img
-          className="product-detail-image"
+        <ImageLoader
           src={imageUrl}
           alt={loc.productName || sku}
+          className="product-detail-image"
         />
       </div>
       <div
@@ -153,7 +144,9 @@ const ProductDetailPage = () => {
             </p>
           )}
           <div className="panel-expanded-content">
-            <p className="product-full-description">{loc.description}</p>
+            <p className="product-full-description">
+              {loc.description || 'No description available.'}
+            </p>
             {isProductActive && (
               <div className="stock-info">
                 <strong>Availability:</strong>{' '}
@@ -192,16 +185,18 @@ const ProductDetailPage = () => {
             )}
             {!isProductActive && isInCart && (
               <div className="action-buttons">
-                  <button
-                      className="remove-from-cart-btn"
-                      onClick={handleToggleCart}
-                  >
-                      Remove from Shopping Cart
-                  </button>
+                <button
+                  className="remove-from-cart-btn"
+                  onClick={handleToggleCart}
+                >
+                  Remove from Shopping Cart
+                </button>
               </div>
             )}
             {!isProductActive && !isInCart && (
-              <p className="inactive-product-message">This product is currently inactive and cannot be purchased.</p>
+              <p className="inactive-product-message">
+                This product is currently inactive and cannot be purchased.
+              </p>
             )}
           </div>
         </div>

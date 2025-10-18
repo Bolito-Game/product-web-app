@@ -19,31 +19,39 @@ const ProductCard = ({ product, isCheckable = false, isChecked, onToggleCheck })
   const isInactive = product.productStatus?.toUpperCase() === 'INACTIVE';
   const statusClass = isInactive ? 'status-inactive' : '';
 
+  // Get first sentence and truncate to 60 characters
+  const getShortDescription = (text) => {
+    if (!text) return '';
+    const firstSentence = text.match(/[^.!?]+[.!?]+/)?.[0] || text;
+    return firstSentence.length > 80 
+      ? firstSentence.slice(0, 80) + '...' 
+      : firstSentence;
+  };
+
   // This handler prevents the Link navigation when only the checkmark is clicked
   const handleCheckmarkClick = (e) => {
-    e.preventDefault(); // Stop the click from triggering the Link navigation
+    e.preventDefault();
     if (!isInactive && onToggleCheck) {
-      onToggleCheck(product.sku); // Call the toggle function from ShoppingCartPage
+      onToggleCheck(product.sku);
     }
   };
 
   return (
     <Link to={`/product/${product.sku}`} state={{ product }} className="product-card-link">
       <div className={`product-card ${statusClass}`}>
-        {/* The checkmark is added here, inside the relatively positioned card */}
         {isCheckable && (
           <div
             className={`checkmark ${isChecked ? 'checked' : ''} ${isInactive ? 'disabled' : ''}`}
             onClick={handleCheckmarkClick}
           >
-            &#10003; {/* Check symbol */}
+            &#10003;
           </div>
         )}
 
         <ImageLoader src={product.imageUrl} alt={localization.productName} />
         <div className="product-info">
           <h3>{localization.productName}</h3>
-          <p>{localization.description}</p>
+          <p>{getShortDescription(localization.description)}</p>
           <div className="product-price">{formattedPrice}</div>
         </div>
       </div>

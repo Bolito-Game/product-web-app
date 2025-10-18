@@ -128,7 +128,7 @@ body {
 
 .product-info { padding: 15px; }
 .product-info h3 { margin-top: 0; margin-bottom: 10px; }
-.product-info p { font-size: 0.9em; color: #666; margin-bottom: 15px; }
+.product-info p {margin: 0; font-size: 0.9em; color: #666; overflow: hidden; text-overflow: ellipsis; }
 .product-price { font-weight: bold; font-size: 1.2em; color: var(--primary-color); }
 .product-card-link { text-decoration: none; color: inherit; }
 
@@ -309,6 +309,41 @@ body {
   box-sizing:border-box;
 }
 
+/* Ensure ImageLoader matches product-detail-image styling */
+.product-image-container .image-frame {
+  padding-top: 0; /* Remove the 1:1 aspect ratio enforced by ImageLoader */
+  height: 100%; /* Match the container's height (80% of viewport) */
+  width: 100%; /* Match the container's width */
+  background-color: transparent; /* Remove default background */
+}
+
+.product-image-container .placeholder-image,
+.product-image-container .final-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Match product-detail-image */
+  border: 1px solid var(--border-color); /* Match product-detail-image */
+  border-radius: 4px; /* Match product-detail-image */
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: none; /* Remove the centering transform used by placeholder-image */
+}
+
+/* Ensure the loading animation doesn't interfere */
+.product-image-container .image-frame.loading {
+  background-color: #f0f0f0; /* Match the default background for consistency */
+}
+
+/* Ensure the opacity transition works as expected */
+.product-image-container .final-image {
+  opacity: 1; /* Override the default opacity handling if not loading */
+}
+
+.product-image-container .image-frame.loading .final-image {
+  opacity: 0; /* Maintain the fade-in effect during loading */
+}
+
 /* Mobile / portrait : full width  ------------------------------------ */
 @media(max-width:767px){
   .product-image-container{
@@ -432,9 +467,11 @@ body {
 }
 
 .product-full-description {
-  color: #000;
+  margin: 10px 0;
+  font-size: 1em;
   line-height: 1.5;
-  margin: 15px 0;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .purchase-controls {
@@ -804,6 +841,7 @@ body {
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 50px;
 }
 
 .payment-button.paypal {
@@ -895,4 +933,36 @@ body {
   margin-top: 5px;
   color: #888;
   font-size: 0.8em;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+
+.quantity-selector button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.quantity-selector button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-selector button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.quantity-selector span {
+  min-width: 30px;
+  text-align: center;
+  font-weight: 500;
 }
