@@ -112,8 +112,14 @@ const ProductsCheckoutPage = () => {
             if (!response.ok) {
               throw new Error(captureData.error || 'Failed to capture order');
             }
+            console.log('Capture data:', captureData);
             showNotification('Payment successful!');
-            navigate('/order-success'); // Adjust route as needed
+            navigate('/order-success', {
+              state: {
+                details: captureData,
+                checkoutItems // Pass checkoutItems
+              }
+            });
           } catch (err) {
             showNotification(`Payment failed: ${err.message}`);
           }

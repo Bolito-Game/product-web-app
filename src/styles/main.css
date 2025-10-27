@@ -966,3 +966,123 @@ body {
   text-align: center;
   font-weight: 500;
 }
+
+/* --- Order Success Page --- */
+.order-success-container {
+  margin-top: 1.5rem;
+}
+
+.success-message {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.success-message h3 {
+  margin: 0;
+  font-size: 1.5em;
+  color: #28a745; /* Green to indicate success */
+}
+
+.success-message p {
+  margin: 10px 0 0;
+  font-size: 1.1em;
+  color: var(--text-color, #333);
+}
+
+.order-details {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.order-details h4 {
+  border-bottom: 1px solid var(--border-color, #ddd);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.order-detail-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+}
+
+.order-detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.detail-value {
+  color: var(--text-color, #333);
+}
+
+.detail-value.status-completed {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.continue-shopping-btn {
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 15px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.continue-shopping-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 767px) {
+  .order-detail-row {
+    grid-template-columns: 120px 1fr;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .success-message h3 {
+    font-size: 1.3em;
+  }
+
+  .success-message p {
+    font-size: 1em;
+  }
+
+  .order-details h4 {
+    font-size: 1.1em;
+  }
+
+  .continue-shopping-btn {
+    padding: 12px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-detail-row {
+    grid-template-columns: 100px 1fr;
+    gap: 8px;
+  }
+
+  .detail-label {
+    font-size: 0.9em;
+  }
+
+  .detail-value {
+    font-size: 0.9em;
+  }
+}
