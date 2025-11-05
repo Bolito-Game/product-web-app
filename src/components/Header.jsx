@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import React, { useContext, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { CartContext } from '../contexts/CartContext';
@@ -8,27 +9,30 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Log cartItems changes to confirm Header receives updates
   useEffect(() => {
     console.log('Header useEffect: cartItems =', cartItems, 'count =', count);
   }, [cartItems]);
 
-
   return React.createElement(
     'header',
     { className: 'app-header' },
+    
     React.createElement(
       'div',
       { className: 'header-left' },
       React.createElement('h1', null, 'Product Showcase')
     ),
+
     React.createElement(
       'div',
-      { className: 'cart-wrapper', onClick: () => navigate('/shopping-cart'), style: { cursor: 'pointer' } },
+      { 
+        className: 'cart-wrapper', 
+        onClick: () => navigate('/shopping-cart'), 
+        style: { cursor: 'pointer' } 
+      },
       React.createElement(
         'svg',
         {
-          className: 'cart-svg', // Added for CSS targeting
           viewBox: '0 0 24 24',
           fill: 'none',
           xmlns: 'http://www.w3.org/2000/svg',
@@ -59,10 +63,11 @@ const Header = () => {
         count
       )
     ),
+
     React.createElement(
       'nav',
       null,
-      location.pathname.startsWith('/product/') ?
+      location.pathname.startsWith('/product/') || location.pathname.startsWith('/order-view') ?
         React.createElement(
           'a',
           { href: '#', onClick: (e) => { e.preventDefault(); navigate(-1); } },
@@ -80,6 +85,11 @@ const Header = () => {
             NavLink,
             { to: '/categories', className: ({ isActive }) => (isActive ? 'active' : '') },
             'By Category'
+          ),
+          React.createElement(
+            NavLink,
+            { to: '/my-orders', className: ({ isActive }) => (isActive ? 'active' : '') },
+            'My Orders'
           )
         )
     )

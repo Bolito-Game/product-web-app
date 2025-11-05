@@ -18,6 +18,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import ShoppingCartPage from './pages/ShoppingCartPage';
 import ProductsCheckoutPage from './pages/ProductsCheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
+import MyOrdersPage from './pages/MyOrdersPage';
+import OrderViewPage from './pages/OrderViewPage';
 
 function App() {
   const { isMobile } = useResponsive();
@@ -44,6 +46,8 @@ function App() {
                 <Route path="/shopping-cart" element={<ShoppingCartPage />} />
                 <Route path="/checkout" element={<ProductsCheckoutPage />} />
                 <Route path="/order-success" element={<OrderSuccessPage />} />
+                <Route path="/my-orders" element={<MyOrdersPage />} />
+                <Route path="/order-view" element={<OrderViewPage />} />
               </Routes>
             </div>
           </>
@@ -59,6 +63,8 @@ function App() {
               <Route path="/shopping-cart" element={<ShoppingCartPage />} />
               <Route path="/checkout" element={<ProductsCheckoutPage />} />
               <Route path="/order-success" element={<OrderSuccessPage />} />
+              <Route path="/my-orders" element={<MyOrdersPage />} />
+              <Route path="/order-view" element={<OrderViewPage />} />
             </Routes>
           </div>
         )}

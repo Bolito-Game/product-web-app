@@ -36,3 +36,18 @@ export const useShoppingCart = (sku, product) => {
 
   return { isInCart, handleToggleCart };
 };
+
+
+export const deleteFromShoppingCart = (checkoutItems = []) => {
+  const { cartItems = [], updateCart } = useContext(CartContext);
+  
+  const deleteFromCart = () => {
+    const checkoutSkus = Array.isArray(checkoutItems) 
+      ? checkoutItems.map(item => item.product?.sku).filter(Boolean) 
+      : [];
+    const updatedCart = cartItems.filter(item => !checkoutSkus.includes(item.sku));
+    updateCart(updatedCart);
+  };
+
+  return { deleteFromCart };
+};

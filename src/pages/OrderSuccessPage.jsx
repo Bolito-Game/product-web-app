@@ -1,7 +1,10 @@
-import React, { useContext } from 'react';
+// src/pages/OrderSuccessPage.jsx
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationContext } from '../contexts/NotificationContext';
+import { saveOrder } from '../utils/indexedDB';
 import Loader from '../components/Loader';
+import { deleteFromShoppingCart } from '../hooks/useShoppingCart';
 
 const OrderSuccessPage = () => {
   const location = useLocation();
@@ -11,11 +14,30 @@ const OrderSuccessPage = () => {
   // Extract order details and checkout items from location.state
   const orderDetails = location.state?.details?.details;
   const checkoutItems = location.state?.checkoutItems;
+  const fromCart = location.state?.fromCart === true;
 
-  // Log for debugging
-  console.log('OrderSuccessPage orderDetails:', orderDetails);
-  console.log('OrderSuccessPage checkoutItems:', checkoutItems);
-  console.log('Rendering OrderSuccessPage with orderId:', orderDetails?.id);
+  const { deleteFromCart } = useMemo(() => deleteFromShoppingCart(checkoutItems || []), [checkoutItems]);
+
+  const hasDeletedCart = useRef(false);
+
+  useEffect(() => {
+    if (orderDetails && checkoutItems?.length > 0) {
+      const orderEntry = {
+        id: orderDetails.id,
+        savedAt: new Date().toISOString(),
+        details: orderDetails,
+        checkoutItems,
+      };
+      saveOrder(orderEntry).catch(() => {
+        showNotification('Failed to save order locally.', 'error');
+      });
+    }
+
+    if (fromCart && !hasDeletedCart.current) {
+      deleteFromCart();
+      hasDeletedCart.current = true;
+    }
+  }, [orderDetails, checkoutItems, showNotification, fromCart]);
 
   // Handle case where no order details are provided
   if (!orderDetails) {

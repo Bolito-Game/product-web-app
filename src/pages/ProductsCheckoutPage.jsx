@@ -117,7 +117,8 @@ const ProductsCheckoutPage = () => {
             navigate('/order-success', {
               state: {
                 details: captureData,
-                checkoutItems // Pass checkoutItems
+                checkoutItems,
+                fromCart: location.state?.fromCart
               }
             });
           } catch (err) {

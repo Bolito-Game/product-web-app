@@ -19,7 +19,12 @@ const ShoppingCartPage = () => {
       .map((item) => ({ sku: item.product.sku, quantity: 1 }));
 
     if (itemsToCheckout.length > 0) {
-      navigate("/checkout", { state: { items: itemsToCheckout } });
+      navigate("/checkout", { 
+        state: { 
+          items: itemsToCheckout,
+          fromCart: true
+        } 
+      });
     }
   };
 
