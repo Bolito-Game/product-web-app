@@ -3,6 +3,21 @@ import React, { useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationContext } from '../contexts/NotificationContext';
 
+/* Inline local-date formatter – identical to MyOrdersPage */
+const formatOrderDate = (dateString) => {
+  if (!dateString) return 'Date not available';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return 'Invalid date';
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    timeZoneName: 'short',
+  }).format(d);
+};
+
 const OrderViewPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -16,18 +31,8 @@ const OrderViewPage = () => {
 
   const { details, checkoutItems } = order;
 
-  // Reuse ALL formatting logic from OrderSuccessPage
   const fmtPrice = (value, currency) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(value ?? 0);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Date not available';
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? 'Invalid date' : new Intl.DateTimeFormat('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: 'numeric', minute: 'numeric', timeZoneName: 'short',
-    }).format(date);
-  };
 
   const {
     id: orderId = 'N/A',
@@ -35,7 +40,7 @@ const OrderViewPage = () => {
     status = 'N/A',
     payer = {},
     purchaseUnits = [{}],
-  } = details;
+  } = details || {};
 
   const purchaseUnit = purchaseUnits[0] || {};
   const capture = purchaseUnit.payments?.captures?.[0] || {};
@@ -59,7 +64,7 @@ const OrderViewPage = () => {
             </div>
             <div className="order-detail-row">
               <span className="detail-label">Order Date:</span>
-              <span className="detail-value">{formatDate(createTime)}</span>
+              <span className="detail-value">{formatOrderDate(createTime)}</span>
             </div>
             <div className="order-detail-row">
               <span className="detail-label">Total Amount:</span>
