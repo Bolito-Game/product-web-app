@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 // The path to our new placeholder image in the public folder.
-const placeholderSrc = '/placeholder.svg';
+const placeholderSrc = '/assets/icons/placeholder.svg';
 
 const ImageLoader = ({ src, alt }) => {
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ const ImageLoader = ({ src, alt }) => {
         <img 
           src={placeholderSrc} 
           alt="Loading placeholder" 
-          className="placeholder-image" // Note: class name changed for clarity
+          className="placeholder-image"
         />
       )}
       

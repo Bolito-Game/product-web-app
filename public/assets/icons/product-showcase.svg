@@ -1,0 +1,81 @@
+<!-- src/assets/icons/product-showcase.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40" fill="none"
+     class="product-showcase-icon-final">
+  
+  <style>
+    .product-showcase-icon-final {
+      transition: all 0.4s ease;
+    }
+    .product-showcase-icon-final:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 8px 20px rgba(96, 165, 250, 0.6));
+    }
+    .product-showcase-icon-final .fill-bar {
+      transform-origin: bottom;
+      transition: all 0.7s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    .product-showcase-icon-final:hover .fill-1 { d: path("M20 10 h22 v20 h-22 Z"); transition-delay: 0ms; }
+    .product-showcase-icon-final:hover .fill-2 { d: path("M52 10 h22 v20 h-22 Z"); transition-delay: 80ms; }
+    .product-showcase-icon-final:hover .fill-3 { d: path("M84 10 h22 v20 h-22 Z"); transition-delay: 160ms; }
+    .product-showcase-icon-final:hover .fill-4 { d: path("M116 10 h22 v20 h-22 Z"); transition-delay: 240ms; }
+    .product-showcase-icon-final:hover .fill-5 { d: path("M148 10 h22 v20 h-22 Z"); transition-delay: 320ms; }
+
+    @keyframes pulseGlow {
+      0%, 100% { fill: url(#grad1); }
+      50%      { fill: url(#grad2); }
+    }
+    .product-showcase-icon-final:hover .fill-bar {
+      animation: pulseGlow 1.6s ease-in-out 0.3s;
+    }
+  </style>
+
+  <!-- Gradients for extra juice on hover -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer outline -->
+  <rect x="1" y="1" width="178" height="38" rx="8" stroke="currentColor" stroke-width="2"/>
+
+  <!-- Product grid -->
+  <g stroke="currentColor" stroke-width="2">
+    <rect x="20"  y="10" width="22" height="20" rx="3"/>
+    <rect x="52"  y="10" width="22" height="20" rx="3"/>
+    <rect x="84"  y="10" width="22" height="20" rx="3"/>
+    <rect x="116" y="10" width="22" height="20" rx="3"/>
+    <rect x="148" y="10" width="22" height="20" rx="3"/>
+  </g>
+
+  <!-- Animated fill bars (start from your dynamic pattern) -->
+  <g class="fill-bar">
+    <path class="fill-1" d="M20 10 h22 v4   h-22 Z" fill="url(#grad1)"/>
+    <path class="fill-2" d="M52 20 h22 v10  h-22 Z" fill="url(#grad1)"/>
+    <path class="fill-3" d="M84 10 h22 v16  h-22 Z" fill="url(#grad1)"/>
+    <path class="fill-4" d="M116 16.5 h22 v13.5 h-22 Z" fill="url(#grad1)"/>
+    <path class="fill-5" d="M148 10 h22 v19 h-22 Z" fill="url(#grad1)"/>
+  </g>
+
+  <!-- Dark overlay behind text only for maximum contrast -->
+  <rect x="30" y="18" width="120" height="16" rx="8" fill="rgba(0,0,0,0.4)"/>
+
+  <!-- Ultra-visible text -->
+  <text x="50%" y="55%" 
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif"
+        font-size="17" 
+        font-weight="800"
+        fill="white"
+        stroke="#000"
+        stroke-width="3"
+        paint-order="stroke fill"
+        text-anchor="middle" 
+        dominant-baseline="middle">
+    Product Showcase
+  </text>
+</svg>

@@ -30,6 +30,12 @@ export const useShoppingCart = (sku, product) => {
       if (product) {
         setProductInCache(sku, product);
       }
+
+      setTimeout(() => {
+        document.querySelector('.header-cart')?.classList.add('added');
+        setTimeout(() => document.querySelector('.header-cart')?.classList.remove('added'), 600);
+      }, 100);
+      
       showNotification('Item was added to the Shopping Cart!');
     }
   };

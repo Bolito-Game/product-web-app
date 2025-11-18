@@ -10,7 +10,8 @@
   },
   "devDependencies": {
     "vite": "^7.1.2",
-    "vite-plugin-purgecss": "^0.2.13"
+    "vite-plugin-purgecss": "^0.2.13",
+    "vite-plugin-svgr": "^4.5.0"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.3",
