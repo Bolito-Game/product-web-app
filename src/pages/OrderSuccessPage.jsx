@@ -2,7 +2,7 @@
 import React, { useContext, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationContext } from '../contexts/NotificationContext';
-import { saveOrder } from '../utils/indexedDB';
+import { saveOrder } from '../database/orders';
 import Loader from '../components/Loader';
 import { deleteFromShoppingCart } from '../hooks/useShoppingCart';
 

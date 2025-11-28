@@ -1,7 +1,7 @@
 // src/pages/MyOrdersPage.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllOrders, deleteOrder } from '../utils/indexedDB';
+import { getAllOrders, deleteOrder } from '../database/orders';
 import { NotificationContext } from '../contexts/NotificationContext';
 import Loader from '../components/Loader';
 import ImageLoader from '../components/ImageLoader';

@@ -132,3 +132,38 @@ export async function getProductsBySku(skus) {
   const data = await fetchGraphQL(query, { skus, lang, country });
   return data.getProductsBySku;
 }
+
+// Query for all categories in a specific language
+export async function getAllCategoriesByLanguage(nextToken = null) {
+  const { lang } = getUserLocale();
+  const query = `
+    query GetAllCategoriesByLanguage($lang: String!, $nextToken: String) {
+      getAllCategoriesByLanguage(lang: $lang, limit: 20, nextToken: $nextToken) {
+        items {
+          category
+          text
+        }
+        nextToken
+        lastUpdated
+      }
+    }
+  `;
+  
+  const data = await fetchGraphQL(query, { lang, nextToken });
+  return data.getAllCategoriesByLanguage;
+}
+
+// Query to fetch metadata values
+export async function getMetadata() {
+  const query = `
+    query GetMetadata {
+      metadata {
+        productsLastUpdated
+        categoriesLastUpdated
+      }
+    }
+  `;
+    
+  const data = await fetchGraphQL(query);
+  return data.metadata;
+}
