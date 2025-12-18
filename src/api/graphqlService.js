@@ -67,6 +67,30 @@ export async function getAllProducts(nextToken = null) {
   return data.getAllProductsByLocalization;
 }
 
+export async function searchProducts(search, nextToken = null) {
+  const { lang, country } = getUserLocale();
+  const query = `
+    query SearchProducts($search: String!, $lang: String!, $country: String!, $nextToken: String) {
+      searchProducts(search: $search, lang: $lang, country: $country, limit: 20, nextToken: $nextToken) {
+        items {
+          sku
+          imageUrl
+          productStatus
+          localizations {
+            productName
+            description
+            price
+            currency
+          }
+        }
+        nextToken
+      }
+    }
+  `;
+  const data = await fetchGraphQL(query, { search, lang, country, nextToken });
+  return data.searchProducts;
+}
+
 // Query for all categories in a specific language
 export async function getAllCategories(nextToken = null) {
   const { lang } = getUserLocale();
@@ -86,20 +110,23 @@ export async function getAllCategories(nextToken = null) {
 }
 
 // Query for products within a specific category
-export async function getProductsByCategory(category) {
+export async function getProductsByCategory(category, limit = 20, nextToken = null) {
   const { lang, country } = getUserLocale();
   const query = `
-    query GetProductsByCategory($category: String!, $lang: String!, $country: String!) {
-      getProductsByCategory(category: $category, lang: $lang, country: $country) {
-        sku
-        imageUrl
-        productStatus
-        localizations {
-          productName
-          description
-          price
-          currency
+    query GetProductsByCategory($category: String!, $lang: String!, $country: String!, $limit: Int, $nextToken: String) {
+      getProductsByCategory(category: $category, lang: $lang, country: $country, limit: $limit, nextToken: $nextToken) {
+        items {
+          sku
+          imageUrl
+          productStatus
+          localizations {
+            productName
+            description
+            price
+            currency
+          }
         }
+        nextToken 
       }
     }
   `;
