@@ -81,14 +81,31 @@ const ProductsCheckoutPage = () => {
       const commonButtonConfig = {
         createOrder: async (data, actions) => {
           try {
+            // 1. Construct the details collection from the current checkoutItems state
+            const products = checkoutItems.map(item => ({
+              sku: item.product.sku,
+              quantity: item.orderQuantity,
+              price: item.product.localizations?.[0]?.price || 0
+            }));
+
             const response = await fetch(`${API_ENDPOINT}/public/paypal/create-order`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'x-api-key': API_KEY
               },
-              body: JSON.stringify({ amount: totalDue, currency })
+              // 2. Include both the top-level attributes and the new details attribute
+              body: JSON.stringify({ 
+                amount: totalDue, 
+                currency,
+                details: {
+                  amount: totalDue,
+                  currency: currency,
+                  products: products
+                }
+              })
             });
+
             const orderData = await response.json();
             if (!response.ok) {
               throw new Error(orderData.error || 'Failed to create order');
@@ -145,7 +162,7 @@ const ProductsCheckoutPage = () => {
       }).render(cardContainer);
     }
     // This effect re-runs when the total changes, re-rendering the buttons with the new amount.
-  }, [paypalLoaded, totalDue, currency, API_ENDPOINT, API_KEY, showNotification, navigate]);
+  }, [paypalLoaded, totalDue, currency, API_ENDPOINT, API_KEY, showNotification, navigate, checkoutItems]);
 
   // Effect to fetch product data on component mount
   useEffect(() => {
