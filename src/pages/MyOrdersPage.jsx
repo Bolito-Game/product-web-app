@@ -1,6 +1,7 @@
 // src/pages/MyOrdersPage.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getAllOrders, deleteOrder } from '../database/orders';
 import { NotificationContext } from '../contexts/NotificationContext';
 import Loader from '../components/Loader';
@@ -16,14 +17,14 @@ const getLocalDateString = (order) => {
   const d = new Date(createTime);
   if (isNaN(d.getTime())) return 'unknown';
 
-  return d.toLocaleDateString('en-CA'); 
+  return d.toLocaleDateString('en-CA');
 };
 
-const formatDateHeader = (dateString) => {
-  if (dateString === 'unknown') return 'Unknown Date';
+const formatDateHeader = (dateString, t) => {
+  if (dateString === 'unknown') return t('my_orders.unknown_date');
   const [y, m, d] = dateString.split('-');
   const date = new Date(y, m - 1, d);
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -56,7 +57,7 @@ const groupByDate = (orders) => {
 /* --------------------------------------------------------------
    Order Card
    -------------------------------------------------------------- */
-const OrderCard = ({ order, onView, onDelete }) => {
+const OrderCard = ({ order, onView, onDelete, t }) => {
   let firstImage = null;
   for (const it of order.checkoutItems || []) {
     if (it.product?.imageUrl) {
@@ -68,11 +69,15 @@ const OrderCard = ({ order, onView, onDelete }) => {
   return (
     <div className="product-card">
       <div onClick={onView} style={{ cursor: 'pointer' }}>
-        <ImageLoader src={firstImage} alt={`Order ${order.id}`} />
+        <ImageLoader src={firstImage} alt={t('my_orders.order_alt', { id: order.id })} />
       </div>
       <div className="order-card-actions">
-        <button onClick={onView} className="action-btn view">Details</button>
-        <button onClick={onDelete} className="action-btn delete">Delete</button>
+        <button onClick={onView} className="action-btn view">
+          {t('my_orders.view_details')}
+        </button>
+        <button onClick={onDelete} className="action-btn delete">
+          {t('my_orders.delete')}
+        </button>
       </div>
     </div>
   );
@@ -82,6 +87,7 @@ const OrderCard = ({ order, onView, onDelete }) => {
    Main Page
    -------------------------------------------------------------- */
 const MyOrdersPage = () => {
+  const { t } = useTranslation();
   const [allOrders, setAllOrders] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const [visibleCount, setVisibleCount] = useState(25);
@@ -104,7 +110,7 @@ const MyOrdersPage = () => {
       setAllOrders(sorted);
     } catch (err) {
       console.error('Failed to load orders:', err);
-      showNotification('Failed to load orders.', 'error');
+      showNotification(t('my_orders.load_error'), 'error');
     } finally {
       setLoading(false);
     }
@@ -135,10 +141,10 @@ const MyOrdersPage = () => {
       const remaining = allOrders.filter((o) => o.id !== deleteId);
       setAllOrders(remaining);
       setDeleteId(null);
-      showNotification('Order deleted successfully.');
+      showNotification(t('my_orders.delete_success'));
     } catch (err) {
       console.error('Delete error:', err);
-      showNotification('Failed to delete order.', 'error');
+      showNotification(t('my_orders.delete_error'), 'error');
       setDeleteId(null);
     }
   };
@@ -164,49 +170,50 @@ const MyOrdersPage = () => {
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <h2>My Orders</h2>
+    <div className="my-orders-page">
+      <div className="page-header">
+        <h2>{t('my_orders.title')}</h2>
 
-      {/* Date filter */}
-      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <label htmlFor="date-filter" style={{ marginRight: '0.5rem', fontWeight: 500 }}>
-          Filter by date:
-        </label>
-        <select
-          id="date-filter"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '1rem',
-            borderRadius: '4px',
-            border: '1px solid var(--border-color)',
-          }}
-        >
-          <option value="">All Dates</option>
-          {uniqueDates.map(d => (
-            <option key={d} value={d}>
-              {new Date(d).toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </option>
-          ))}
-        </select>
+        {/* Date filter */}
+        <div className="filter-container">
+          <label htmlFor="date-filter">
+            {t('my_orders.filter_label')}
+          </label>
+          <select
+            id="date-filter"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="date-select"
+          >
+            <option value="">{t('my_orders.all_dates')}</option>
+            {uniqueDates.map(d => (
+              <option key={d} value={d}>
+                {new Date(d).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {filteredGroups.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#666' }}>
-          No orders {selectedDate ? 'on this date' : 'saved yet'}.
-        </p>
+        <div className="no-results">
+          <p>
+            {selectedDate
+              ? t('my_orders.no_orders_date')
+              : t('my_orders.no_orders_yet')}
+          </p>
+        </div>
       ) : (
         <>
           {displayedGroups.map(({ date, visible, totalCount }) => (
             <div key={date} className="date-group">
               <h3 className="date-header">
                 <span className="date-full">
-                  {formatDateHeader(date)} ({totalCount} order{totalCount > 1 ? 's' : ''})
+                  {formatDateHeader(date, t)} ({totalCount} {t('my_orders.order', { count: totalCount })})
                 </span>
                 <span className="date-compact">
                   {new Date(date).toLocaleDateString(undefined, {
@@ -225,6 +232,7 @@ const MyOrdersPage = () => {
                     order={order}
                     onView={() => viewOrder(order)}
                     onDelete={() => confirmDelete(order.id)}
+                    t={t}
                   />
                 ))}
               </div>
@@ -237,28 +245,32 @@ const MyOrdersPage = () => {
                 onClick={() => setVisibleCount(c => c + 25)}
                 className="load-more-button"
               >
-                Load More
+                {t('my_orders.load_more')}
               </button>
             </div>
           )}
         </>
       )}
 
-      <div className="action-buttons" style={{ marginTop: '2rem' }}>
+      <div className="action-buttons">
         <button className="continue-shopping-btn" onClick={() => navigate('/')}>
-          Continue Shopping
+          {t('my_orders.continue_shopping')}
         </button>
       </div>
 
-      {/* Delete modal */}
+      {/* Delete confirmation modal */}
       {deleteId && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3>Delete Order?</h3>
-            <p>This action cannot be undone.</p>
+            <h3>{t('my_orders.delete_confirm_title')}</h3>
+            <p>{t('my_orders.delete_confirm_message')}</p>
             <div className="modal-actions">
-              <button onClick={executeDelete} className="modal-btn danger">Delete</button>
-              <button onClick={cancelDelete} className="modal-btn cancel">Cancel</button>
+              <button onClick={executeDelete} className="modal-btn danger">
+                {t('my_orders.delete')}
+              </button>
+              <button onClick={cancelDelete} className="modal-btn cancel">
+                {t('my_orders.cancel')}
+              </button>
             </div>
           </div>
         </div>

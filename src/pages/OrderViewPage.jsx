@@ -1,38 +1,46 @@
 // src/pages/OrderViewPage.jsx
 import React, { useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { NotificationContext } from '../contexts/NotificationContext';
 
-/* Inline local-date formatter – identical to MyOrdersPage */
-const formatOrderDate = (dateString) => {
-  if (!dateString) return 'Date not available';
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return 'Invalid date';
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    timeZoneName: 'short',
-  }).format(d);
-};
-
 const OrderViewPage = () => {
+  const { t } = useTranslation();
   const { state } = useLocation();
   const navigate = useNavigate();
   const { showNotification } = useContext(NotificationContext);
   const order = state?.order;
 
   if (!order) {
-    showNotification('Order not found.');
+    showNotification(t('order_view.not_found'), 'error');
+    // Optionally redirect after a delay
+    setTimeout(() => navigate('/my-orders'), 2000);
     return null;
   }
 
   const { details, checkoutItems } = order;
 
+  // Format currency respecting current locale
   const fmtPrice = (value, currency) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(value ?? 0);
+    new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(value ?? 0);
+
+  // Safe date formatting
+  const formatOrderDate = (dateString) => {
+    if (!dateString) return t('order_view.date_not_available');
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return t('order_view.invalid_date');
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      timeZoneName: 'short',
+    }).format(d);
+  };
 
   const {
     id: orderId = 'N/A',
@@ -51,75 +59,92 @@ const OrderViewPage = () => {
   return (
     <div className="products-checkout-page">
       <div className="checkout-content">
+        <h2>{t('order_view.title')}</h2>
+
         <div className="order-success-container">
           <div className="order-details">
-            <h4>Order Details</h4>
+            <h4>{t('order_view.order_details')}</h4>
             <div className="order-detail-row">
-              <span className="detail-label">Order ID:</span>
+              <span className="detail-label">{t('order_view.order_id')}:</span>
               <span className="detail-value">{orderId}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Order Status:</span>
+              <span className="detail-label">{t('order_view.status')}:</span>
               <span className="detail-value status-completed">{status}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Order Date:</span>
+              <span className="detail-label">{t('order_view.order_date')}:</span>
               <span className="detail-value">{formatOrderDate(createTime)}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Total Amount:</span>
-              <span className="detail-value">{fmtPrice(amount.value, amount.currencyCode)}</span>
-            </div>
-            <div className="order-detail-row">
-              <span className="detail-label">Payer:</span>
+              <span className="detail-label">{t('order_view.total_amount')}:</span>
               <span className="detail-value">
-                {payer.name ? `${payer.name.givenName} ${payer.name.surname}` : 'N/A'}
+                {fmtPrice(amount.value, amount.currencyCode)}
               </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Email:</span>
-              <span className="detail-value">{payer.emailAddress || 'N/A'}</span>
+              <span className="detail-label">{t('order_view.payer')}:</span>
+              <span className="detail-value">
+                {payer.name
+                  ? `${payer.name.givenName} ${payer.name.surname}`
+                  : t('order_view.na')}
+              </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Shipping Address:</span>
+              <span className="detail-label">{t('order_view.email')}:</span>
+              <span className="detail-value">{payer.emailAddress || t('order_view.na')}</span>
+            </div>
+            <div className="order-detail-row">
+              <span className="detail-label">{t('order_view.shipping_address')}:</span>
               <span className="detail-value">
                 {shipping.address?.addressLine1
                   ? `${shipping.address.addressLine1}, ${shipping.address.adminArea2}, ${shipping.address.adminArea1} ${shipping.address.postalCode}, ${shipping.address.countryCode}`
-                  : 'N/A'}
+                  : t('order_view.na')}
               </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Payee Email:</span>
+              <span className="detail-label">{t('order_view.payee_email')}:</span>
               <span className="detail-value">{payee.emailAddress}</span>
             </div>
           </div>
 
           <div className="checkout-items-list">
-            <h4>Order Summary</h4>
-            {checkoutItems.map(({ product, orderQuantity }) => {
-              const loc = product.localizations?.[0] || {};
-              return (
-                <div key={product.sku} className="checkout-item-row">
-                  <img
-                    src={product.imageUrl || '/path/to/placeholder-image.jpg'}
-                    alt={loc.productName || 'Product'}
-                    className="checkout-item-image"
-                  />
-                  <div className="checkout-item-details">
-                    <span className="item-name">{loc.productName || 'N/A'}</span>
-                    <span className="item-price">{fmtPrice(loc.price, loc.currency)}</span>
+            <h4>{t('order_view.order_summary')}</h4>
+            {checkoutItems && checkoutItems.length > 0 ? (
+              checkoutItems.map(({ product, orderQuantity }) => {
+                const loc = product.localizations?.[0] || {};
+                return (
+                  <div key={product.sku} className="checkout-item-row">
+                    <img
+                      src={product.imageUrl || '/path/to/placeholder-image.jpg'}
+                      alt={loc.productName || t('order_view.product')}
+                      className="checkout-item-image"
+                    />
+                    <div className="checkout-item-details">
+                      <span className="item-name">{loc.productName || t('order_view.na')}</span>
+                      <span className="item-price">
+                        {fmtPrice(loc.price, loc.currency)}
+                      </span>
+                    </div>
+                    <div className="checkout-item-quantity">
+                      <span>
+                        {t('order_view.quantity')}: {orderQuantity}
+                      </span>
+                    </div>
                   </div>
-                  <div className="checkout-item-quantity">
-                    <span>Quantity: {orderQuantity}</span>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <p>{t('order_view.no_items')}</p>
+            )}
           </div>
 
           <div className="action-buttons">
-            <button className="continue-shopping-btn" onClick={() => navigate('/my-orders')}>
-              Back to My Orders
+            <button
+              className="continue-shopping-btn"
+              onClick={() => navigate('/my-orders')}
+            >
+              {t('order_view.back_to_orders')}
             </button>
           </div>
         </div>

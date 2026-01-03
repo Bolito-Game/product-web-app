@@ -1,5 +1,7 @@
+// src/pages/ProductsCheckoutPage.jsx
 import React, { useState, useEffect, useMemo, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getProductsBySku } from '../api/graphqlService';
 import { setProductInCache } from '../utils/productCache';
 import { NotificationContext } from '../contexts/NotificationContext';
@@ -13,7 +15,7 @@ const QuantitySelector = ({ max, value, onChange }) => {
 
   return (
     <div className="quantity-selector">
-      <button onClick={dec} disabled={value <= 1}>-</button>
+      <button onClick={dec} disabled={value <= 1}>−</button>
       <span>{value}</span>
       <button onClick={inc} disabled={value >= max}>+</button>
     </div>
@@ -22,6 +24,7 @@ const QuantitySelector = ({ max, value, onChange }) => {
 
 /* ---------- Page Component --------------------------------------- */
 const ProductsCheckoutPage = () => {
+  const { t } = useTranslation();
   const [checkoutItems, setCheckoutItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,7 +40,7 @@ const ProductsCheckoutPage = () => {
   const API_KEY = import.meta.env.VITE_PUBLIC_API_KEY;
   const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
-  // Effect to load the PayPal SDK script
+  // Load PayPal SDK
   useEffect(() => {
     if (!window.paypal && PAYPAL_CLIENT_ID !== 'placeholder-sandbox-client-id') {
       const script = document.createElement('script');
@@ -50,10 +53,10 @@ const ProductsCheckoutPage = () => {
     }
   }, [PAYPAL_CLIENT_ID]);
 
-  // Memoize total calculation
+  // Calculate total
   const { totalDue, currency } = useMemo(() => {
     let total = 0;
-    let ccy = 'USD'; // Default currency
+    let ccy = 'USD';
     checkoutItems.forEach(item => {
       const loc = item.product.localizations?.[0];
       if (loc) {
@@ -64,24 +67,20 @@ const ProductsCheckoutPage = () => {
     return { totalDue: total, currency: ccy };
   }, [checkoutItems]);
 
+  // Render PayPal buttons when ready
   useEffect(() => {
-    // Wait until the PayPal SDK is loaded, window.paypal is available, and there's a total due
     if (paypalLoaded && window.paypal && totalDue > 0) {
       const paypalContainer = paypalRef.current;
       const cardContainer = cardRef.current;
 
-      // Ensure the container elements have been rendered
       if (!paypalContainer || !cardContainer) return;
 
-      // Clear previous buttons before rendering new ones (important for when totalDue changes)
       paypalContainer.innerHTML = '';
       cardContainer.innerHTML = '';
 
-      // Common configuration for both buttons to avoid repetition
       const commonButtonConfig = {
-        createOrder: async (data, actions) => {
+        createOrder: async () => {
           try {
-            // 1. Construct the details collection from the current checkoutItems state
             const products = checkoutItems.map(item => ({
               sku: item.product.sku,
               quantity: item.orderQuantity,
@@ -94,28 +93,21 @@ const ProductsCheckoutPage = () => {
                 'Content-Type': 'application/json',
                 'x-api-key': API_KEY
               },
-              // 2. Include both the top-level attributes and the new details attribute
-              body: JSON.stringify({ 
-                amount: totalDue, 
+              body: JSON.stringify({
+                amount: totalDue,
                 currency,
-                details: {
-                  amount: totalDue,
-                  currency: currency,
-                  products: products
-                }
+                details: { amount: totalDue, currency, products }
               })
             });
 
             const orderData = await response.json();
-            if (!response.ok) {
-              throw new Error(orderData.error || 'Failed to create order');
-            }
+            if (!response.ok) throw new Error(orderData.error || t('checkout.create_order_error'));
             return orderData.id;
           } catch (err) {
-            showNotification(`Failed to create order: ${err.message}`);
+            showNotification(`${t('checkout.create_order_failed')}: ${err.message}`);
           }
         },
-        onApprove: async (data, actions) => {
+        onApprove: async (data) => {
           try {
             const response = await fetch(`${API_ENDPOINT}/public/paypal/capture-order`, {
               method: 'POST',
@@ -126,11 +118,9 @@ const ProductsCheckoutPage = () => {
               body: JSON.stringify({ orderID: data.orderID })
             });
             const captureData = await response.json();
-            if (!response.ok) {
-              throw new Error(captureData.error || 'Failed to capture order');
-            }
-            console.log('Capture data:', captureData);
-            showNotification('Payment successful!');
+            if (!response.ok) throw new Error(captureData.error || t('checkout.capture_error'));
+
+            showNotification(t('checkout.payment_success'));
             navigate('/order-success', {
               state: {
                 details: captureData,
@@ -139,37 +129,33 @@ const ProductsCheckoutPage = () => {
               }
             });
           } catch (err) {
-            showNotification(`Payment failed: ${err.message}`);
+            showNotification(`${t('checkout.payment_failed')}: ${err.message}`);
           }
         },
-        onError: (err) => {
-          showNotification('An error occurred during payment.');
-          console.error('PayPal error:', err);
+        onError: () => {
+          showNotification(t('checkout.payment_error'));
         }
       };
 
-      // Render the standard PayPal Button
       window.paypal.Buttons({
         ...commonButtonConfig,
         style: { shape: 'rect', color: 'blue', layout: 'horizontal', label: 'paypal' }
       }).render(paypalContainer);
 
-      // Render the Credit Card Button
       window.paypal.Buttons({
         ...commonButtonConfig,
         fundingSource: 'card',
         style: { shape: 'rect', color: 'white', layout: 'horizontal', label: 'pay' }
       }).render(cardContainer);
     }
-    // This effect re-runs when the total changes, re-rendering the buttons with the new amount.
-  }, [paypalLoaded, totalDue, currency, API_ENDPOINT, API_KEY, showNotification, navigate, checkoutItems]);
+  }, [paypalLoaded, totalDue, currency, API_ENDPOINT, API_KEY, showNotification, navigate, checkoutItems, location.state, t]);
 
-  // Effect to fetch product data on component mount
+  // Fetch products
   useEffect(() => {
     const itemsToFetch = location.state?.items;
 
     if (!itemsToFetch || itemsToFetch.length === 0) {
-      setError('No items to check out. Redirecting...');
+      setError(t('checkout.no_items'));
       setTimeout(() => navigate('/'), 2000);
       setLoading(false);
       return;
@@ -189,24 +175,24 @@ const ProductsCheckoutPage = () => {
           const requestedQty = requestedQuantities.get(sku);
 
           if (!freshProduct) {
-            showNotification(`Product with SKU ${sku} could not be found and was removed.`);
+            showNotification(t('checkout.product_not_found', { sku }));
             continue;
           }
 
           setProductInCache(sku, freshProduct);
 
           const availableQty = freshProduct.quantityInStock;
-          const productName = freshProduct.localizations?.[0]?.productName || 'This product';
+          const productName = freshProduct.localizations?.[0]?.productName || t('checkout.this_product');
 
           if (availableQty === 0) {
-            showNotification(`${productName} is out of stock and was removed.`);
+            showNotification(t('checkout.out_of_stock', { name: productName }));
             continue;
           }
 
           let finalQty = requestedQty;
           if (requestedQty > availableQty) {
             finalQty = availableQty;
-            showNotification(`Quantity for ${productName} was reduced to ${availableQty} to match stock.`);
+            showNotification(t('checkout.quantity_reduced', { name: productName, qty: availableQty }));
           }
 
           processedItems.push({
@@ -214,14 +200,14 @@ const ProductsCheckoutPage = () => {
             orderQuantity: finalQty
           });
         }
-        
+
         if (processedItems.length === 0 && itemsToFetch.length > 0) {
-            setError('All selected products are currently unavailable.');
+          setError(t('checkout.all_unavailable'));
         }
 
         setCheckoutItems(processedItems);
       } catch (err) {
-        setError('Failed to load checkout data. Please try again.');
+        setError(t('checkout.load_error'));
         console.error("Checkout Error:", err);
       } finally {
         setLoading(false);
@@ -229,21 +215,18 @@ const ProductsCheckoutPage = () => {
     };
 
     fetchCheckoutData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
-  
+  }, [location.state, navigate, showNotification, t]);
+
   const handleQuantityChange = (sku, newQuantity) => {
-    setCheckoutItems(currentItems =>
-      currentItems.map(item =>
-        item.product.sku === sku
-          ? { ...item, orderQuantity: newQuantity }
-          : item
+    setCheckoutItems(current =>
+      current.map(item =>
+        item.product.sku === sku ? { ...item, orderQuantity: newQuantity } : item
       )
     );
   };
 
   const fmtPrice = (value, ccy) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: ccy || 'USD' }).format(value ?? 0);
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: ccy || 'USD' }).format(value ?? 0);
 
   if (loading) return <div className="detail-loader-container"><Loader /></div>;
   if (error) return <p className="error-message">{error}</p>;
@@ -251,53 +234,55 @@ const ProductsCheckoutPage = () => {
   return (
     <div className="products-checkout-page">
       <div className="checkout-content">
-        <h2>Checkout</h2>
-        
+        <h2>{t('checkout.title')}</h2>
+
         {totalDue > 0 ? (
           <>
             <div className="payment-buttons-container">
-              {/* These containers are targeted by the useEffect to render the buttons */}
               <div className="payment-button paypal" ref={paypalRef}>
-                {/* Fallback content shown only if SDK fails to load or render */}
-                {!paypalLoaded && <><FaPaypal size="1.2em" /> <span>PayPal</span></>}
+                {!paypalLoaded && <><FaPaypal size="1.2em" /> <span>{t('checkout.paypal')}</span></>}
               </div>
               <div className="payment-button credit-card" ref={cardRef}>
-                {!paypalLoaded && <><FaCreditCard size="1.2em" /> <span>Credit Card</span></>}
+                {!paypalLoaded && <><FaCreditCard size="1.2em" /> <span>{t('checkout.credit_card')}</span></>}
               </div>
             </div>
 
             <div className="total-due-container">
-              <h3>Total Due:</h3>
+              <h3>{t('checkout.total_due')}:</h3>
               <span className="total-due-amount">{fmtPrice(totalDue, currency)}</span>
             </div>
           </>
         ) : null}
 
         <div className="checkout-items-list">
-          <h4>Order Summary</h4>
+          <h4>{t('checkout.order_summary')}</h4>
           {checkoutItems.length > 0 ? (
             checkoutItems.map(({ product, orderQuantity }) => {
               const loc = product.localizations?.[0] || {};
               return (
                 <div key={product.sku} className="checkout-item-row">
-                  <img src={product.imageUrl} alt={loc.productName} className="checkout-item-image" />
+                  <img
+                    src={product.imageUrl}
+                    alt={loc.productName || t('checkout.product')}
+                    className="checkout-item-image"
+                  />
                   <div className="checkout-item-details">
-                    <span className="item-name">{loc.productName}</span>
+                    <span className="item-name">{loc.productName || t('checkout.na')}</span>
                     <span className="item-price">{fmtPrice(loc.price, loc.currency)}</span>
                   </div>
                   <div className="checkout-item-quantity">
-                      <QuantitySelector
-                        max={product.quantityInStock}
-                        value={orderQuantity}
-                        onChange={(newQty) => handleQuantityChange(product.sku, newQty)}
-                      />
-                      <small>In Stock: {product.quantityInStock}</small>
+                    <QuantitySelector
+                      max={product.quantityInStock}
+                      value={orderQuantity}
+                      onChange={(newQty) => handleQuantityChange(product.sku, newQty)}
+                    />
+                    <small>{t('checkout.in_stock')}: {product.quantityInStock}</small>
                   </div>
                 </div>
               );
             })
           ) : (
-            <p>Your checkout is empty.</p>
+            <p>{t('checkout.empty')}</p>
           )}
         </div>
       </div>

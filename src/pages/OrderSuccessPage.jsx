@@ -1,12 +1,14 @@
 // src/pages/OrderSuccessPage.jsx
-import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { saveOrder } from '../database/orders';
 import Loader from '../components/Loader';
-import { deleteFromShoppingCart } from '../hooks/useShoppingCart';
+import { useDeleteFromCart } from '../hooks/useShoppingCart';
 
 const OrderSuccessPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { showNotification } = useContext(NotificationContext);
@@ -16,7 +18,7 @@ const OrderSuccessPage = () => {
   const checkoutItems = location.state?.checkoutItems;
   const fromCart = location.state?.fromCart === true;
 
-  const { deleteFromCart } = useMemo(() => deleteFromShoppingCart(checkoutItems || []), [checkoutItems]);
+  const { deleteFromCart } = useDeleteFromCart(checkoutItems || []);
 
   const hasDeletedCart = useRef(false);
 
@@ -29,7 +31,7 @@ const OrderSuccessPage = () => {
         checkoutItems,
       };
       saveOrder(orderEntry).catch(() => {
-        showNotification('Failed to save order locally.', 'error');
+        showNotification(t('order_success.save_error'), 'error');
       });
     }
 
@@ -37,29 +39,36 @@ const OrderSuccessPage = () => {
       deleteFromCart();
       hasDeletedCart.current = true;
     }
-  }, [orderDetails, checkoutItems, showNotification, fromCart]);
+  }, [orderDetails, checkoutItems, showNotification, fromCart, t, deleteFromCart]);
 
-  // Handle case where no order details are provided
+  // Handle missing order details
   if (!orderDetails) {
-    showNotification('No order details available. Redirecting...');
+    showNotification(t('order_success.no_details'));
     setTimeout(() => navigate('/'), 2000);
-    return <div className="detail-loader-container"><Loader /></div>;
+    return (
+      <div className="detail-loader-container">
+        <Loader />
+      </div>
+    );
   }
 
-  // Format currency values
+  // Format currency
   const fmtPrice = (value, currency) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(value ?? 0);
+    new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(value ?? 0);
 
-  // Format dates with validation
+  // Format date safely
   const formatDate = (dateString) => {
     if (!dateString || typeof dateString !== 'string') {
-      return 'Date not available';
+      return t('order_success.date_not_available');
     }
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return 'Invalid date';
+      return t('order_success.invalid_date');
     }
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(undefined, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -69,7 +78,7 @@ const OrderSuccessPage = () => {
     }).format(date);
   };
 
-  // Extract key information from orderDetails with fallbacks
+  // Extract order data with safe fallbacks
   const {
     id: orderId = 'N/A',
     createTime = null,
@@ -87,57 +96,62 @@ const OrderSuccessPage = () => {
   return (
     <div className="products-checkout-page">
       <div className="checkout-content">
-        <h2>Order Confirmation</h2>
+        <h2>{t('order_success.title')}</h2>
+
         <div className="order-success-container">
           <div className="success-message">
-            <h3>Thank You for Your Purchase!</h3>
-            <p>Your payment has been successfully processed.</p>
+            <h3>{t('order_success.thank_you')}</h3>
+            <p>{t('order_success.payment_success')}</p>
           </div>
 
           <div className="order-details">
-            <h4>Order Details</h4>
+            <h4>{t('order_success.order_details')}</h4>
             <div className="order-detail-row">
-              <span className="detail-label">Order ID:</span>
+              <span className="detail-label">{t('order_success.order_id')}:</span>
               <span className="detail-value">{orderId}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Order Status:</span>
+              <span className="detail-label">{t('order_success.status')}:</span>
               <span className="detail-value status-completed">{status}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Order Date:</span>
+              <span className="detail-label">{t('order_success.order_date')}:</span>
               <span className="detail-value">{formatDate(createTime)}</span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Total Amount:</span>
-              <span className="detail-value">{fmtPrice(amount.value, amount.currencyCode)}</span>
-            </div>
-            <div className="order-detail-row">
-              <span className="detail-label">Payer:</span>
+              <span className="detail-label">{t('order_success.total_amount')}:</span>
               <span className="detail-value">
-                {payer.name ? `${payer.name.givenName} ${payer.name.surname}` : 'N/A'}
+                {fmtPrice(amount.value, amount.currencyCode)}
               </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Email:</span>
-              <span className="detail-value">{payer.emailAddress || 'N/A'}</span>
+              <span className="detail-label">{t('order_success.payer')}:</span>
+              <span className="detail-value">
+                {payer.name
+                  ? `${payer.name.givenName} ${payer.name.surname}`
+                  : t('order_success.na')}
+              </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Shipping Address:</span>
+              <span className="detail-label">{t('order_success.email')}:</span>
+              <span className="detail-value">{payer.emailAddress || t('order_success.na')}</span>
+            </div>
+            <div className="order-detail-row">
+              <span className="detail-label">{t('order_success.shipping_address')}:</span>
               <span className="detail-value">
                 {shipping.address?.addressLine1
                   ? `${shipping.address.addressLine1}, ${shipping.address.adminArea2}, ${shipping.address.adminArea1} ${shipping.address.postalCode}, ${shipping.address.countryCode}`
-                  : 'N/A'}
+                  : t('order_success.na')}
               </span>
             </div>
             <div className="order-detail-row">
-              <span className="detail-label">Payee Email:</span>
+              <span className="detail-label">{t('order_success.payee_email')}:</span>
               <span className="detail-value">{payee.emailAddress}</span>
             </div>
           </div>
 
           <div className="checkout-items-list">
-            <h4>Order Summary</h4>
+            <h4>{t('order_success.order_summary')}</h4>
             {checkoutItems && checkoutItems.length > 0 ? (
               checkoutItems.map(({ product, orderQuantity }) => {
                 const loc = product.localizations?.[0] || {};
@@ -145,21 +159,25 @@ const OrderSuccessPage = () => {
                   <div key={product.sku} className="checkout-item-row">
                     <img
                       src={product.imageUrl || '/path/to/placeholder-image.jpg'}
-                      alt={loc.productName || 'Product'}
+                      alt={loc.productName || t('order_success.product')}
                       className="checkout-item-image"
                     />
                     <div className="checkout-item-details">
-                      <span className="item-name">{loc.productName || 'N/A'}</span>
-                      <span className="item-price">{fmtPrice(loc.price, loc.currency)}</span>
+                      <span className="item-name">{loc.productName || t('order_success.na')}</span>
+                      <span className="item-price">
+                        {fmtPrice(loc.price, loc.currency)}
+                      </span>
                     </div>
                     <div className="checkout-item-quantity">
-                      <span>Quantity: {orderQuantity}</span>
+                      <span>
+                        {t('order_success.quantity')}: {orderQuantity}
+                      </span>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <p>No items in this order.</p>
+              <p>{t('order_success.no_items')}</p>
             )}
           </div>
 
@@ -168,7 +186,7 @@ const OrderSuccessPage = () => {
               className="continue-shopping-btn"
               onClick={() => navigate('/')}
             >
-              Continue Shopping
+              {t('order_success.continue_shopping')}
             </button>
           </div>
         </div>

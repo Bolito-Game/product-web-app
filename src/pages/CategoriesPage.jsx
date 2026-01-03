@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAllCategories, getProductsByCategory } from '../api/graphqlService';
 import { searchCategories } from '../database';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 
-// --- SUB-COMPONENT: CategoryProductList ---
 const CategoryProductList = ({ categoryId }) => {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,10 +15,8 @@ const CategoryProductList = ({ categoryId }) => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // The new function returns the object: { items: [...], nextToken: ... }
         const productData = await getProductsByCategory(categoryId);
-        
-        // Access .items from the returned data
+
         if (productData && productData.items) {
           const visibleProducts = productData.items.filter(
             product => product.productStatus !== 'DISCONTINUED'
@@ -28,40 +27,37 @@ const CategoryProductList = ({ categoryId }) => {
         }
       } catch (err) {
         console.error('Error fetching products:', err);
-        setError('Failed to load products for this category.');
+        setError(t('categories.no_products_error'));
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, [categoryId]);
+  }, [categoryId, t]);
 
   if (loading) return <Loader />;
   if (error) return <p className="error-message">{error}</p>;
-  
-  if (products.length === 0) return <p className="no-products">No products found in this category.</p>;
+  if (products.length === 0) return <p className="no-products">{t('categories.no_products')}</p>;
 
   return (
     <div className="product-grid product-grid-3">
       {products.map((product) => (
-        // Passing the product object which now contains 'sku' and 'localizations'
         <ProductCard key={product.sku} product={product} />
       ))}
     </div>
   );
 };
 
-// --- MAIN PAGE COMPONENT ---
 const CategoriesPage = () => {
-  const [categories, setCategories] = useState([]); 
-  const [displayedCategories, setDisplayedCategories] = useState([]); 
+  const { t } = useTranslation();
+  const [categories, setCategories] = useState([]);
+  const [displayedCategories, setDisplayedCategories] = useState([]);
   const [openCategory, setOpenCategory] = useState(null);
   const [nextToken, setNextToken] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
   const [error, setError] = useState(null);
 
@@ -71,13 +67,13 @@ const CategoriesPage = () => {
       const sortedCategories = data.items.sort((a, b) => a.text.localeCompare(b.text));
       setCategories(prev => token ? [...prev, ...sortedCategories] : sortedCategories);
       setNextToken(data.nextToken);
-      
+
       if (!token && sortedCategories.length > 0) {
         setOpenCategory(sortedCategories[0].category);
       }
     } catch (err) {
       console.error('Failed to fetch categories:', err);
-      setError('Failed to fetch categories.');
+      setError(t('categories.fetch_error'));
     }
   };
 
@@ -85,7 +81,6 @@ const CategoriesPage = () => {
     const trimmedTerm = term.trim();
     if (trimmedTerm.length < 2) {
       setDisplayedCategories(categories);
-      setSearchResults([]);
       setNoResults(false);
       setSearchLoading(false);
       return;
@@ -97,7 +92,6 @@ const CategoriesPage = () => {
       if (results.length === 0) {
         setNoResults(true);
         setDisplayedCategories([]);
-        setSearchResults([]);
       } else {
         const displayResults = results.map(cat => ({
           category: cat.category,
@@ -106,11 +100,10 @@ const CategoriesPage = () => {
           matchScore: cat.matchScore,
           lang: cat.lang
         }));
-        
-        setSearchResults(results);
+
         setDisplayedCategories(displayResults);
         setNoResults(false);
-        
+
         if (displayResults.length > 0 && openCategory !== displayResults[0].category) {
           setOpenCategory(displayResults[0].category);
         }
@@ -133,7 +126,6 @@ const CategoriesPage = () => {
   const clearSearch = () => {
     setSearchTerm('');
     setDisplayedCategories(categories);
-    setSearchResults([]);
     setNoResults(false);
     if (categories.length > 0) setOpenCategory(categories[0].category);
   };
@@ -156,17 +148,17 @@ const CategoriesPage = () => {
     setLoadingMore(true);
     fetchCategories(nextToken).finally(() => setLoadingMore(false));
   };
-  
+
   const toggleCategory = (categoryId) => {
     setOpenCategory(openCategory === categoryId ? null : categoryId);
   };
 
   const formatMatchIndicator = (matchType, matchScore) => {
     switch (matchType) {
-      case 'exact': return '✅ Exact';
-      case 'startsWith': return '🔍 Starts';
-      case 'contains': return '📋 Contains';
-      case 'fuzzy': return `🎯 ${matchScore}%`;
+      case 'exact': return t('categories.match_exact');
+      case 'startsWith': return t('categories.match_starts');
+      case 'contains': return t('categories.match_contains');
+      case 'fuzzy': return t('categories.match_fuzzy', { score: matchScore });
       default: return '';
     }
   };
@@ -176,26 +168,34 @@ const CategoriesPage = () => {
   return (
     <div className="categories-page">
       <div className="page-header">
-        <h2>Products by Category</h2>
+        <h2>{t('categories.title')}</h2>
         <div className="search-container">
           <div className="search-box">
             <input
               type="text"
-              placeholder="🔍 Search categories..."
+              placeholder={t('categories.search_placeholder')}
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-input"
             />
             {searchLoading && <span className="search-loading">🔄</span>}
-            {searchTerm && <button className="clear-search-btn" onClick={clearSearch}>✕</button>}
+            {searchTerm && (
+              <button className="clear-search-btn" onClick={clearSearch}>
+                ✕
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {noResults && (
         <div className="no-results">
-          <p>No categories found matching "<strong>{searchTerm}</strong>"</p>
-          <button onClick={clearSearch} className="show-all-btn">Show All</button>
+          <p>
+            {t('categories.no_results')} "<strong>{searchTerm}</strong>"
+          </p>
+          <button onClick={clearSearch} className="show-all-btn">
+            {t('categories.show_all')}
+          </button>
         </div>
       )}
 
@@ -224,14 +224,20 @@ const CategoriesPage = () => {
           </div>
         ))}
       </div>
-      
+
       {nextToken && !searchTerm && (
         <div className="load-more-container">
-          <button onClick={handleLoadMoreCategories} disabled={loadingMore} className="load-more-button">
-            {loadingMore ? 'Loading...' : 'Load More Categories'}
+          <button
+            onClick={handleLoadMoreCategories}
+            disabled={loadingMore}
+            className="load-more-button"
+          >
+            {loadingMore ? t('categories.loading_more') : t('categories.load_more')}
           </button>
         </div>
       )}
+
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,8 +6,10 @@ import { CartProvider } from './contexts/CartContext';
 import { NotificationProvider } from './contexts/NotificationContext'; 
 import { CategoriesProvider } from './contexts/CategoriesContext'; 
 
+import ErrorBoundary from './components/ErrorBoundary';
 import App from './App.jsx';
 import './styles/main.css';
+import './i18n.js'
 
 window.addEventListener('unhandledrejection', (event) => {
   if (event.reason?.message?.includes('categories')) {
@@ -18,13 +21,15 @@ window.addEventListener('unhandledrejection', (event) => {
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <NotificationProvider>
-        <CartProvider>
-          <CategoriesProvider>
-            <App />
-          </CategoriesProvider>
-        </CartProvider>
-      </NotificationProvider>
+      <ErrorBoundary> 
+        <NotificationProvider>
+          <CartProvider>
+            <CategoriesProvider>
+              <App />
+            </CategoriesProvider>
+          </CartProvider>
+        </NotificationProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   </React.StrictMode>
 );

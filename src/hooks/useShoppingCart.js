@@ -1,9 +1,12 @@
+// src/hooks/useShoppingCart.js
 import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CartContext } from '../contexts/CartContext';
 import { NotificationContext } from '../contexts/NotificationContext';
 import { setProductInCache } from '../utils/productCache';
 
 export const useShoppingCart = (sku, product) => {
+  const { t } = useTranslation();
   const { cartItems = [], updateCart } = useContext(CartContext);
   const { showNotification } = useContext(NotificationContext);
 
@@ -16,43 +19,46 @@ export const useShoppingCart = (sku, product) => {
       // --- REMOVE FROM CART ---
       const updatedCart = cartItems.filter(item => item.sku !== sku);
       updateCart(updatedCart);
-      
-      // The product cache is no longer removed from local storage here.
-      // It will now expire naturally after 1 hour, according to the TTL logic.
-      
-      showNotification('Item was removed from the Shopping Cart.');
+
+      showNotification(t('cart.item_removed'));
     } else {
       // --- ADD TO CART ---
       const updatedCart = [...cartItems, { sku, checked: true }];
       updateCart(updatedCart);
-      
-      // Use the cache utility to store the product with a timestamp.
+
       if (product) {
         setProductInCache(sku, product);
       }
 
+      // Visual feedback animation
       setTimeout(() => {
         document.querySelector('.header-cart')?.classList.add('added');
         setTimeout(() => document.querySelector('.header-cart')?.classList.remove('added'), 600);
       }, 100);
-      
-      showNotification('Item was added to the Shopping Cart!');
+
+      showNotification(t('cart.item_added'));
     }
   };
 
   return { isInCart, handleToggleCart };
 };
 
-
-export const deleteFromShoppingCart = (checkoutItems = []) => {
+export const useDeleteFromCart = (checkoutItems = []) => {
+  const { t } = useTranslation();
   const { cartItems = [], updateCart } = useContext(CartContext);
-  
+  const { showNotification } = useContext(NotificationContext);
+
   const deleteFromCart = () => {
-    const checkoutSkus = Array.isArray(checkoutItems) 
-      ? checkoutItems.map(item => item.product?.sku).filter(Boolean) 
+    const checkoutSkus = Array.isArray(checkoutItems)
+      ? checkoutItems.map(item => item.product?.sku).filter(Boolean)
       : [];
+
+    if (checkoutSkus.length === 0) return;
+
     const updatedCart = cartItems.filter(item => !checkoutSkus.includes(item.sku));
     updateCart(updatedCart);
+
+    showNotification(t('cart.items_cleared_after_checkout'));
   };
 
   return { deleteFromCart };

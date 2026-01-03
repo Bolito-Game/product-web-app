@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAllProducts, searchProducts } from '../api/graphqlService';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 
 const AllProductsPage = () => {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [nextToken, setNextToken] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  // Search States (Mirroring CategoriesPage style)
+  // Search States
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const [noResults, setNoResults] = useState(false);
 
-  // Centralized fetch logic to handle both browsing and searching
   const fetchProducts = async (token, term = '') => {
     try {
       let data;
@@ -34,17 +35,15 @@ const AllProductsPage = () => {
       setNoResults(visibleProducts.length === 0 && !token);
     } catch (err) {
       console.error('Fetch error:', err);
-      setError('Failed to fetch products. Please try again later.');
+      setError(t('all_products.error'));
     }
   };
 
-  // Initial Load
   useEffect(() => {
     setInitialLoading(true);
     fetchProducts(null).finally(() => setInitialLoading(false));
   }, []);
 
-  // Debounced Search Handler
   const handleSearchChange = (e) => {
     const term = e.target.value;
     setSearchTerm(term);
@@ -53,7 +52,6 @@ const AllProductsPage = () => {
 
     window.searchTimeout = setTimeout(async () => {
       setSearchLoading(true);
-      // If term is cleared, reset to basic product list
       await fetchProducts(null, term);
       setSearchLoading(false);
     }, 300);
@@ -76,14 +74,13 @@ const AllProductsPage = () => {
   return (
     <div className="products-page">
       <div className="page-header">
-        <h2>All Products</h2>
+        <h2>{t('all_products.title')}</h2>
 
-        {/* 🔍 SEARCH BAR - Styled like CategoriesPage */}
         <div className="search-container">
           <div className="search-box">
             <input
               type="text"
-              placeholder="🔍 Search products by name..."
+              placeholder={t('all_products.search_placeholder')}
               value={searchTerm}
               onChange={handleSearchChange}
               className="search-input"
@@ -98,18 +95,18 @@ const AllProductsPage = () => {
         </div>
       </div>
 
-      {/* NO RESULTS MESSAGE */}
       {noResults && (
         <div className="no-results">
           <div className="no-results-icon">📦</div>
-          <p>No products found matching "<strong>{searchTerm}</strong>"</p>
+          <p>
+            {t('all_products.no_results')} "<strong>{searchTerm}</strong>"
+          </p>
           <button onClick={clearSearch} className="show-all-btn">
-            Show All Products
+            {t('all_products.show_all')}
           </button>
         </div>
       )}
 
-      {/* PRODUCT GRID */}
       {!noResults && (
         <div className="product-grid product-grid-3">
           {products.map((product) => (
@@ -118,15 +115,14 @@ const AllProductsPage = () => {
         </div>
       )}
 
-      {/* LOAD MORE */}
       {nextToken && !noResults && (
         <div className="load-more-container">
-          <button 
-            onClick={handleLoadMore} 
+          <button
+            onClick={handleLoadMore}
             disabled={loadingMore}
             className="load-more-button"
           >
-            {loadingMore ? 'Loading...' : 'Load More Products'}
+            {loadingMore ? t('all_products.loading') : t('all_products.load_more')}
           </button>
         </div>
       )}

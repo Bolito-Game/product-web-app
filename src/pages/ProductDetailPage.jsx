@@ -1,5 +1,7 @@
+// src/pages/ProductDetailPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getProductsBySku } from '../api/graphqlService';
 import Loader from '../components/Loader';
 import ImageLoader from '../components/ImageLoader';
@@ -13,7 +15,7 @@ const QuantitySelector = ({ max, value, onChange }) => {
 
   return (
     <div className="quantity-selector">
-      <button onClick={dec} disabled={value <= 1}>-</button>
+      <button onClick={dec} disabled={value <= 1}>−</button>
       <span>{value}</span>
       <button onClick={inc} disabled={value >= max}>+</button>
     </div>
@@ -22,6 +24,7 @@ const QuantitySelector = ({ max, value, onChange }) => {
 
 /* -------------------------- Product Details Page -------------------------- */
 const ProductDetailsPage = () => {
+  const { t } = useTranslation();
   const { sku } = useParams();
   const navigate = useNavigate();
 
@@ -61,13 +64,13 @@ const ProductDetailsPage = () => {
       try {
         const [data] = await getProductsBySku([sku]);
         if (!alive) return;
-        if (!data) throw new Error('Product not found');
+        if (!data) throw new Error(t('product_detail.not_found'));
 
         setProduct(data);
         setQty(data.quantityInStock > 0 ? 1 : 0);
         setProductInCache(sku, data);
       } catch (e) {
-        if (alive) setError(e.message || 'Failed to load product');
+        if (alive) setError(e.message || t('product_detail.load_error'));
       } finally {
         if (alive) setLoading(false);
       }
@@ -75,7 +78,7 @@ const ProductDetailsPage = () => {
 
     fetchProduct();
     return () => { alive = false; };
-  }, [sku]);
+  }, [sku, t]);
 
   /* ------------------- Loading / Error States ------------------- */
   if (loading) {
@@ -106,7 +109,7 @@ const ProductDetailsPage = () => {
   const isActive = productStatus === 'ACTIVE';
 
   const formatPrice = (value, currency) =>
-    new Intl.NumberFormat('en-US', {
+    new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: currency || 'USD',
     }).format(value ?? 0);
@@ -119,7 +122,6 @@ const ProductDetailsPage = () => {
     }
   };
 
-  /* ------------------- JSX ------------------- */
   return (
     <div className="product-detail-page">
       <div className="detail-content">
@@ -132,7 +134,7 @@ const ProductDetailsPage = () => {
         />
 
         {/* Product Title */}
-        <h2>{loc.productName || 'Untitled Product'}</h2>
+        <h2>{loc.productName || t('product_detail.untitled')}</h2>
 
         {/* Price (only if active) */}
         {isActive && (
@@ -143,10 +145,10 @@ const ProductDetailsPage = () => {
 
         {/* Meta Info */}
         <div className="detail-meta">
-          <strong>SKU:</strong> <span>{sku}</span>
+          <strong>{t('product_detail.sku')}:</strong> <span>{sku}</span>
           {category && (
             <>
-              <strong>Category:</strong> <span>{category}</span>
+              <strong>{t('product_detail.category')}:</strong> <span>{category}</span>
             </>
           )}
         </div>
@@ -154,23 +156,25 @@ const ProductDetailsPage = () => {
         {/* Stock Status */}
         {isActive && (
           <div className="stock-info">
-            <strong>Availability:</strong>{' '}
+            <strong>{t('product_detail.availability')}:</strong>{' '}
             <span className={inStock ? 'in-stock' : 'out-of-stock'}>
-              {inStock ? `${quantityInStock} in stock` : 'Out of stock'}
+              {inStock
+                ? t('product_detail.in_stock', { count: quantityInStock })
+                : t('product_detail.out_of_stock')}
             </span>
           </div>
         )}
 
         {/* Description */}
         <p className="product-full-description">
-          {loc.description || 'No description available.'}
+          {loc.description || t('product_detail.no_description')}
         </p>
 
         {/* Purchase Controls (only if active and in stock) */}
         {isActive && inStock && (
           <>
             <div className="purchase-controls">
-              <label>Quantity:</label>
+              <label>{t('product_detail.quantity')}:</label>
               <QuantitySelector
                 max={quantityInStock}
                 value={qty}
@@ -184,14 +188,14 @@ const ProductDetailsPage = () => {
                 onClick={handleToggleCart}
                 disabled={qty === 0}
               >
-                {isInCart ? 'Remove from Cart' : 'Add to Cart'}
+                {isInCart ? t('product_detail.remove_from_cart') : t('product_detail.add_to_cart')}
               </button>
               <button
                 className="pay-now-btn"
                 onClick={handlePayNow}
                 disabled={qty === 0}
               >
-                Pay Now
+                {t('product_detail.pay_now')}
               </button>
             </div>
           </>
@@ -203,12 +207,12 @@ const ProductDetailsPage = () => {
             {isInCart && (
               <div className="detail-action-buttons">
                 <button className="add-to-cart-btn" onClick={handleToggleCart}>
-                  Remove from Cart
+                  {t('product_detail.remove_from_cart')}
                 </button>
               </div>
             )}
             <p className="inactive-product-message">
-              This product is currently inactive and cannot be purchased.
+              {t('product_detail.inactive_message')}
             </p>
           </>
         )}

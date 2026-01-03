@@ -1,10 +1,13 @@
+// src/pages/ShoppingCartPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import { cleanupExpiredProducts } from '../utils/productCache';
 
 const ShoppingCartPage = () => {
+  const { t } = useTranslation();
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const cartStorageKey = 'product-web-app-shopping-cart';
@@ -12,24 +15,21 @@ const ShoppingCartPage = () => {
   const navigate = useNavigate();
 
   const handleCheckout = () => {
-    // Filter for checked items and map them to the format the checkout page expects.
     const itemsToCheckout = cartData
       .filter((item) => item.checked)
-      // NOTE: Current cart logic doesn't store quantity, so we assume 1.
       .map((item) => ({ sku: item.product.sku, quantity: 1 }));
 
     if (itemsToCheckout.length > 0) {
-      navigate("/checkout", { 
-        state: { 
+      navigate('/checkout', {
+        state: {
           items: itemsToCheckout,
           fromCart: true
-        } 
+        }
       });
     }
   };
 
   useEffect(() => {
-    // Fetch cart items and their full details
     const loadCartData = () => {
       const cartItemsString = localStorage.getItem(cartStorageKey);
       if (!cartItemsString) {
@@ -41,7 +41,7 @@ const ShoppingCartPage = () => {
       try {
         cartItems = JSON.parse(cartItemsString);
       } catch (e) {
-        console.error("Failed to parse cart JSON", e);
+        console.error('Failed to parse cart JSON', e);
         setLoading(false);
         return;
       }
@@ -50,34 +50,29 @@ const ShoppingCartPage = () => {
         setLoading(false);
         return;
       }
-      
-      // Fetch product details for each item in the cart from the local storage cache.
+
       const productsData = cartItems.map(item => {
         const productJson = localStorage.getItem(item.sku);
         let product = null;
 
-        // Check for the product and parse it, expecting the new cache structure.
         if (productJson) {
           try {
             const cachedItem = JSON.parse(productJson);
-            // Ensure the cached item has the expected { data, timestamp } structure.
             if (cachedItem && cachedItem.data) {
-                product = cachedItem.data;
+              product = cachedItem.data;
             }
           } catch (e) {
             console.error(`Failed to parse product from cache for SKU: ${item.sku}`, e);
           }
         }
-        
-        // **Business Rule**: If a product is not ACTIVE, it cannot be checked.
+
         const isChecked = product?.productStatus === 'ACTIVE' ? item.checked : false;
 
         return { ...item, product, checked: isChecked };
-      }).filter(item => item.product); // Filter out items where product details couldn't be found
+      }).filter(item => item.product);
 
       setCartData(productsData);
 
-      // **Data Integrity**: If any product was forced to unchecked, update localStorage
       const updatedCartItems = productsData.map(({ sku, checked }) => ({ sku, checked }));
       localStorage.setItem(cartStorageKey, JSON.stringify(updatedCartItems));
 
@@ -91,7 +86,6 @@ const ShoppingCartPage = () => {
   const handleToggleCheck = useCallback((skuToToggle) => {
     const newCartData = cartData.map(item => {
       if (item.sku === skuToToggle) {
-        // Only allow checking if the product is ACTIVE
         if (item.product.productStatus === 'ACTIVE') {
           return { ...item, checked: !item.checked };
         }
@@ -101,7 +95,6 @@ const ShoppingCartPage = () => {
 
     setCartData(newCartData);
 
-    // Update localStorage with the new checked status
     const updatedCartForStorage = newCartData.map(({ sku, checked }) => ({ sku, checked }));
     localStorage.setItem(cartStorageKey, JSON.stringify(updatedCartForStorage));
   }, [cartData]);
@@ -111,23 +104,29 @@ const ShoppingCartPage = () => {
   }
 
   if (cartData.length === 0) {
-    return <p className="error-message">Your shopping cart is empty. 🛒</p>;
+    return (
+      <div className="no-results">
+        <p>{t('cart.empty')}</p>
+      </div>
+    );
   }
 
   const checkedItemsCount = cartData.filter(item => item.checked).length;
 
   return (
     <div className="shopping-cart-page">
-      <div className="cart-header">
-        <h2>Your Shopping Cart</h2>
-        <button 
-          className="checkout-button" 
+      <div className="page-header">
+        <h2>{t('cart.title')}</h2>
+
+        <button
+          className="checkout-button"
           disabled={checkedItemsCount === 0}
           onClick={handleCheckout}
         >
-          Check Out {checkedItemsCount} Product{checkedItemsCount !== 1 ? 's' : ''}
+          {t('cart.checkout_button', { count: checkedItemsCount })}
         </button>
       </div>
+
       <div className="product-grid product-grid-3">
         {cartData.map(({ product, checked }) => (
           <ProductCard
@@ -135,7 +134,7 @@ const ShoppingCartPage = () => {
             product={product}
             isChecked={checked}
             onToggleCheck={() => handleToggleCheck(product.sku)}
-            isCheckable={true} // Prop to tell ProductCard to show a checkmark
+            isCheckable={true}
           />
         ))}
       </div>
